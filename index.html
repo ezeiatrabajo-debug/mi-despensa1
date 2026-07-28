@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Despensa">
+<title>Mi Despensa</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface-hover: #252525;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #606060;
+    --accent: #4ade80;
+    --accent-soft: rgba(74,222,128,0.12);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251,191,36,0.12);
+    --danger: #f87171;
+    --danger-soft: rgba(248,113,113,0.12);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    height:100%; overflow:hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { height:100%; display:flex; flex-direction:column; }
+
+  .header {
+    padding: 16px 20px 8px;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-shrink:0;
+  }
+  .header h1 { font-size:22px; font-weight:700; letter-spacing:-0.5px; }
+  .header-actions { display:flex; gap:8px; }
+  .icon-btn {
+    width:40px; height:40px; border-radius:var(--radius-md);
+    border:1px solid var(--border); background:var(--surface);
+    color:var(--text); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .icon-btn:hover, .icon-btn:active { background:var(--surface-hover); transform:scale(0.95); }
+  .icon-btn svg { width:20px; height:20px; }
+
+  .screens { flex:1; overflow-y:auto; overflow-x:hidden; position:relative; }
+  .screen {
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    padding: 0 16px 100px; overflow-y:auto;
+    opacity:0; pointer-events:none; transform:translateX(20px);
+    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  .screen.active { opacity:1; pointer-events:auto; transform:translateX(0); position:relative; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: all 0.15s;
+  }
+  .card:active { transform:scale(0.98); }
+
+  .product-row { display:flex; justify-content:space-between; align-items:center; }
+  .product-info { flex:1; min-width:0; }
+  .product-name { font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .product-meta { font-size:12px; color:var(--text-secondary); margin-top:3px; }
+  .product-actions { display:flex; align-items:center; gap:6px; }
+  .qty-btn {
+    width:32px; height:32px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--text); font-size:16px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.1s; user-select:none;
+  }
+  .qty-btn:active { background:var(--surface-hover); transform:scale(0.9); }
+  .qty-display { min-width:28px; text-align:center; font-weight:700; font-size:15px; }
+
+  .stock-bar-wrap { margin-top:10px; }
+  .stock-bar-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+  .stock-bar {
+    height:6px; background:var(--bg); border-radius:3px; overflow:hidden;
+  }
+  .stock-fill { height:100%; border-radius:3px; transition:width 0.4s ease; }
+  .stock-fill.high { background:var(--accent); }
+  .stock-fill.medium { background:var(--warning); }
+  .stock-fill.low { background:var(--danger); }
+
+  .cat-header {
+    display:flex; align-items:center; gap:8px;
+    margin: 18px 0 10px; padding-left:4px;
+  }
+  .cat-dot { width:8px; height:8px; border-radius:50%; }
+  .cat-dot.high { background:var(--accent); }
+  .cat-dot.medium { background:var(--warning); }
+  .cat-dot.low { background:var(--danger); }
+  .cat-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); }
+
+  .empty { text-align:center; padding:60px 20px; color:var(--text-muted); }
+  .empty-icon { font-size:48px; margin-bottom:12px; opacity:0.5; }
+  .empty-text { font-size:15px; }
+
+  .input-group { margin-bottom:14px; }
+  .input-label { font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
+  .input-field {
+    width:100%; padding:12px 14px;
+    background:var(--bg); border:1px solid var(--border);
+    border-radius:var(--radius-md); color:var(--text);
+    font-size:15px; outline:none;
+    transition:border-color 0.2s;
+  }
+  .input-field:focus { border-color:var(--text-secondary); }
+  .input-field::placeholder { color:var(--text-muted); }
+
+  .tags { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag {
+    padding:7px 14px; border-radius:20px;
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--text-secondary); font-size:13px; font-weight:500;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .tag.selected {
+    background:var(--text); color:var(--bg); border-color:var(--text);
+  }
+  .tag:active { transform:scale(0.95); }
+
+  .btn-primary {
+    width:100%; padding:14px;
+    background:var(--text); color:var(--bg);
+    border:none; border-radius:var(--radius-md);
+    font-size:15px; font-weight:700; cursor:pointer;
+    transition:all 0.15s; margin-top:8px;
+  }
+  .btn-primary:active { opacity:0.8; transform:scale(0.98); }
+  .btn-secondary {
+    width:100%; padding:14px;
+    background:transparent; color:var(--text);
+    border:1px solid var(--border); border-radius:var(--radius-md);
+    font-size:15px; font-weight:600; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .btn-secondary:active { background:var(--surface-hover); }
+
+  .check-item {
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+  }
+  .check-item input[type="checkbox"] {
+    width:22px; height:22px; accent-color:var(--text);
+    cursor:pointer; flex-shrink:0;
+  }
+  .check-item span { font-size:15px; transition:all 0.2s; }
+  .check-item.checked span { text-decoration:line-through; color:var(--text-muted); }
+
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface); border-top:1px solid var(--border);
+    display:flex; justify-content:space-around; padding:6px 0 20px;
+    z-index:100; backdrop-filter:blur(20px);
+  }
+  .nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    gap:3px; padding:6px 0; background:none; border:none;
+    color:var(--text-muted); cursor:pointer; transition:color 0.2s;
+  }
+  .nav-item.active { color:var(--text); }
+  .nav-item svg { width:22px; height:22px; }
+  .nav-item span { font-size:10px; font-weight:600; }
+
+  .modal-overlay {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.7); z-index:200;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.25s;
+  }
+  .modal-overlay.active { opacity:1; pointer-events:auto; }
+  .modal-sheet {
+    background:var(--surface); width:100%; max-width:480px;
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    padding:20px 20px 30px; transform:translateY(100%);
+    transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    max-height:85vh; overflow-y:auto;
+  }
+  .modal-overlay.active .modal-sheet { transform:translateY(0); }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-title { font-size:18px; font-weight:700; }
+
+  .toast {
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--surface); color:var(--text); padding:12px 20px;
+    border-radius:var(--radius-md); border:1px solid var(--border);
+    font-size:14px; font-weight:500; z-index:300;
+    opacity:0; pointer-events:none; transition:all 0.3s;
+    white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .history-date { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  .history-title { font-weight:600; font-size:15px; }
+  .history-desc { font-size:13px; color:var(--text-secondary); margin-top:3px; }
+
+  .setting-row { display:flex; justify-content:space-between; align-items:center; }
+  .setting-label { font-weight:500; font-size:15px; }
+  .toggle {
+    width:48px; height:26px; border-radius:13px;
+    background:var(--bg); border:1px solid var(--border);
+    position:relative; cursor:pointer; transition:all 0.2s;
+  }
+  .toggle.on { background:var(--accent); border-color:var(--accent); }
+  .toggle::after {
+    content:''; position:absolute; top:2px; left:2px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--text); transition:all 0.2s;
+  }
+  .toggle.on::after { left:24px; }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  @keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .animate-in { animation:fadeIn 0.3s ease; }
+
+  @media(min-width:600px) {
+    body { display:flex; justify-content:center; background:#000; }
+    #app { width:100%; max-width:430px; border-left:1px solid var(--border); border-right:1px solid var(--border); }
+    .bottom-nav { max-width:430px; left:50%; transform:translateX(-50%); }
+    .modal-overlay { align-items:center; }
+    .modal-sheet { border-radius:var(--radius-lg); transform:scale(0.9); opacity:0; }
+    .modal-overlay.active .modal-sheet { transform:scale(1); opacity:1; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="toast" id="toast"></div>
+
+  <div class="screens" id="screens">
+
+    <!-- STOCK -->
+    <div class="screen active" id="screen-stock">
+      <div class="header">
+        <h1>Mi Despensa</h1>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="openModalAddProduct()" title="Agregar producto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="stock-content"></div>
+    </div>
+
+    <!-- LIST -->
+    <div class="screen" id="screen-list">
+      <div class="header">
+        <h1>Lista de Compras</h1>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="openModalAddList()" title="Agregar a lista">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="list-content"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="screen" id="screen-history">
+      <div class="header"><h1>Historial</h1></div>
+      <div id="history-content"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="header"><h1>Ajustes</h1></div>
+      <div class="card" style="cursor:pointer;" onclick="toggleSetting(this)">
+        <div class="setting-row">
+          <span class="setting-label">Notificaciones de stock bajo</span>
+          <div class="toggle on" data-setting="notifications"></div>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="toggleSetting(this)">
+        <div class="setting-row">
+          <span class="setting-label">Umbral de alerta</span>
+          <span style="font-weight:700;" id="threshold-display">20%</span>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="toggleSetting(this)">
+        <div class="setting-row">
+          <span class="setting-label">Borrar todos los datos</span>
+          <span style="color:var(--danger); font-size:13px; font-weight:600;">Peligroso</span>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:40px; color:var(--text-muted); font-size:12px;">
+        Mi Despensa v1.0
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('stock')" data-screen="stock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Stock</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('list')" data-screen="list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Lista</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('history')" data-screen="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Historial</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('settings')" data-screen="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.67 15 1.65 1.65 0 0 0 3 13.5V13a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V21a2 2 0 1 1 4 0v-.09a1.65 1.65 0 0 0 1-1.51 1.65 1.65 0 0 0 1.82.33l.06.06a2 2 0 1 1 2.83-2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V21a2 2 0 1 1 4 0v-.09a1.65 1.65 0 0 0-1-1.51z"/></svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: Add Product -->
+  <div class="modal-overlay" id="modal-add-product" onclick="closeModalOnOverlay(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Agregar Producto</span>
+        <button class="icon-btn" onclick="closeModal('modal-add-product')" style="width:36px;height:36px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Nombre</label>
+        <input class="input-field" id="prod-name" placeholder="Ej: Cafe en grano" maxlength="40">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="input-group" style="flex:1;">
+          <label class="input-label">Cantidad</label>
+          <input class="input-field" id="prod-qty" type="number" placeholder="5" min="1">
+        </div>
+        <div class="input-group" style="flex:1;">
+          <label class="input-label">Unidad</label>
+          <input class="input-field" id="prod-unit" placeholder="kg, unid, litros..." maxlength="10">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Stock maximo (para la barra)</label>
+        <input class="input-field" id="prod-max" type="number" placeholder="10" min="1" value="10">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Categoria</label>
+        <div class="tags" id="prod-cats">
+          <button class="tag selected" data-cat="almacen" onclick="selectTag(this)">Almacen</button>
+          <button class="tag" data-cat="lacteos" onclick="selectTag(this)">Lacteos</button>
+          <button class="tag" data-cat="verduras" onclick="selectTag(this)">Verduras</button>
+          <button class="tag" data-cat="carnes" onclick="selectTag(this)">Carnes</button>
+          <button class="tag" data-cat="bebidas" onclick="selectTag(this)">Bebidas</button>
+          <button class="tag" data-cat="limpieza" onclick="selectTag(this)">Limpieza</button>
+          <button class="tag" data-cat="otros" onclick="selectTag(this)">Otros</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveProduct()">Guardar en Stock</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Add to List -->
+  <div class="modal-overlay" id="modal-add-list" onclick="closeModalOnOverlay(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Agregar a Lista</span>
+        <button class="icon-btn" onclick="closeModal('modal-add-list')" style="width:36px;height:36px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Producto</label>
+        <input class="input-field" id="list-name" placeholder="Ej: Pan lactal" maxlength="40">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="input-group" style="flex:1;">
+          <label class="input-label">Cantidad</label>
+          <input class="input-field" id="list-qty" type="number" placeholder="2" min="1">
+        </div>
+        <div class="input-group" style="flex:1;">
+          <label class="input-label">Unidad</label>
+          <input class="input-field" id="list-unit" placeholder="unid, kg..." maxlength="10">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Prioridad</label>
+        <div class="tags" id="list-priority">
+          <button class="tag selected" data-prio="normal" onclick="selectTag(this)">Normal</button>
+          <button class="tag" data-prio="urgente" onclick="selectTag(this)">Urgente</button>
+          <button class="tag" data-prio="opcional" onclick="selectTag(this)">Opcional</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveListItem()">Agregar a la Lista</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===================== DATA STORE =====================
+let products = JSON.parse(localStorage.getItem('despensa_products')) || [
+  { id:1, name:'Arroz', qty:5, unit:'kg', max:6, cat:'almacen', created:Date.now() },
+  { id:2, name:'Fideos', qty:4, unit:'paq', max:6, cat:'almacen', created:Date.now() },
+  { id:3, name:'Leche', qty:2, unit:'L', max:6, cat:'lacteos', created:Date.now() },
+  { id:4, name:'Huevos', qty:3, unit:'unid', max:20, cat:'almacen', created:Date.now() },
+];
+let listItems = JSON.parse(localStorage.getItem('despensa_list')) || [
+  { id:1, name:'Pan lactal', qty:1, unit:'unid', prio:'normal', checked:false },
+  { id:2, name:'Yogur natural', qty:4, unit:'unid', prio:'normal', checked:false },
+  { id:3, name:'Tomates', qty:1, unit:'kg', prio:'normal', checked:true },
+  { id:4, name:'Huevos (docena)', qty:1, unit:'unid', prio:'urgente', checked:false },
+  { id:5, name:'Aceite de oliva', qty:1, unit:'L', prio:'normal', checked:false },
+];
+let historyLog = JSON.parse(localStorage.getItem('despensa_history')) || [
+  { id:1, date:'Hoy, 9:30 AM', title:'Compra en Supermercado Dia', desc:'12 productos agregados al stock', type:'buy' },
+  { id:2, date:'Ayer, 6:15 PM', title:'Descontaste: 2 huevos, 1L leche', desc:'Stock actualizado', type:'use' },
+  { id:3, date:'25 Jul, 11:00 AM', title:'Compra en Verduleria', desc:'5 productos agregados al stock', type:'buy' },
+];
+let settings = JSON.parse(localStorage.getItem('despensa_settings')) || { notifications:true, threshold:20 };
+
+function saveData() {
+  localStorage.setItem('despensa_products', JSON.stringify(products));
+  localStorage.setItem('despensa_list', JSON.stringify(listItems));
+  localStorage.setItem('despensa_history', JSON.stringify(historyLog));
+  localStorage.setItem('despensa_settings', JSON.stringify(settings));
+}
+
+// ===================== NAVIGATION =====================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const btn = document.querySelector('.nav-item[data-screen="' + name + '"]');
+  if (btn) btn.classList.add('active');
+  if (name === 'stock') renderStock();
+  if (name === 'list') renderList();
+  if (name === 'history') renderHistory();
+}
+
+// ===================== MODALS =====================
+function openModalAddProduct() {
+  document.getElementById('modal-add-product').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function openModalAddList() {
+  document.getElementById('modal-add-list').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  document.body.style.overflow = '';
+}
+function closeModalOnOverlay(e) {
+  if (e.target === e.currentTarget) closeModal(e.currentTarget.id);
+}
+
+// ===================== TAGS =====================
+function selectTag(btn) {
+  btn.parentElement.querySelectorAll('.tag').forEach(t => t.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== STOCK =====================
+function getStockLevel(pct) {
+  if (pct > 50) return 'high';
+  if (pct > settings.threshold) return 'medium';
+  return 'low';
+}
+
+function renderStock() {
+  const container = document.getElementById('stock-content');
+  if (products.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">&#129371;</div><div class="empty-text">Tu despensa esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddProduct()">Agregar primer producto</button></div>';
+    return;
+  }
+
+  const sorted = [...products].sort((a,b) => {
+    const pa = (a.qty / a.max) * 100;
+    const pb = (b.qty / b.max) * 100;
+    return pa - pb;
+  });
+
+  let html = '';
+  const levels = { low:[], medium:[], high:[] };
+  sorted.forEach(p => {
+    const pct = Math.min((p.qty / p.max) * 100, 100);
+    levels[getStockLevel(pct)].push(p);
+  });
+
+  const levelConfig = {
+    low: { label:'Stock bajo', dot:'low' },
+    medium: { label:'Stock medio', dot:'medium' },
+    high: { label:'Stock alto', dot:'high' }
+  };
+
+  ['low','medium','high'].forEach(level => {
+    if (levels[level].length === 0) return;
+    html += '<div class="cat-header"><div class="cat-dot ' + levelConfig[level].dot + '"></div><span class="cat-title">' + levelConfig[level].label + '</span></div>';
+    levels[level].forEach(p => {
+      const pct = Math.min((p.qty / p.max) * 100, 100);
+      html += '<div class="card animate-in">' +
+        '<div class="product-row">' +
+          '<div class="product-info">' +
+            '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+            '<div class="product-meta">' + p.qty + ' ' + p.unit + ' - ' + catLabel(p.cat) + '</div>' +
+          '</div>' +
+          '<div class="product-actions">' +
+            '<button class="qty-btn" onclick="adjustStock(' + p.id + ', -1)">-</button>' +
+            '<span class="qty-display">' + p.qty + '</span>' +
+            '<button class="qty-btn" onclick="adjustStock(' + p.id + ', 1)">+</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stock-bar-wrap">' +
+          '<div class="stock-bar-labels"><span>0</span><span>' + p.max + ' ' + p.unit + '</span></div>' +
+          '<div class="stock-bar"><div class="stock-fill ' + getStockLevel(pct) + '" style="width:' + pct + '%"></div></div>' +
+        '</div>' +
+      '</div>';
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+function adjustStock(id, delta) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  const oldQty = p.qty;
+  p.qty = Math.max(0, p.qty + delta);
+  if (p.qty !== oldQty) {
+    const action = delta < 0 ? 'usaste' : 'agregaste';
+    addHistory(action + ' ' + Math.abs(delta) + ' ' + p.unit + ' de ' + p.name, delta < 0 ? 'use' : 'buy');
+    saveData();
+    renderStock();
+    showToast(delta < 0 ? 'Descontado: ' + p.name : 'Agregado: ' + p.name);
+  }
+}
+
+function catLabel(cat) {
+  const map = { almacen:'Almacen', lacteos:'Lacteos', verduras:'Verduras', carnes:'Carnes', bebidas:'Bebidas', limpieza:'Limpieza', otros:'Otros' };
+  return map[cat] || cat;
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+// ===================== SAVE PRODUCT =====================
+function saveProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const qty = parseInt(document.getElementById('prod-qty').value) || 0;
+  const unit = document.getElementById('prod-unit').value.trim() || 'unid';
+  const max = parseInt(document.getElementById('prod-max').value) || qty || 10;
+  const cat = document.querySelector('#prod-cats .tag.selected')?.dataset.cat || 'almacen';
+
+  if (!name) { showToast('Ingresa un nombre'); return; }
+  if (qty <= 0) { showToast('Ingresa una cantidad valida'); return; }
+
+  products.push({
+    id: Date.now(),
+    name, qty, unit, max, cat,
+    created: Date.now()
+  });
+
+  addHistory('Compraste ' + qty + ' ' + unit + ' de ' + name, 'buy');
+  saveData();
+  closeModal('modal-add-product');
+  document.getElementById('prod-name').value = '';
+  document.getElementById('prod-qty').value = '';
+  document.getElementById('prod-unit').value = '';
+  document.getElementById('prod-max').value = '10';
+  renderStock();
+  showToast('"' + name + '" agregado al stock');
+}
+
+// ===================== LIST =====================
+function renderList() {
+  const container = document.getElementById('list-content');
+  if (listItems.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">&#128221;</div><div class="empty-text">Tu lista esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddList()">Agregar item</button></div>';
+    return;
+  }
+
+  const prioOrder = { urgente:0, normal:1, opcional:2 };
+  const sorted = [...listItems].sort((a,b) => {
+    if (a.checked !== b.checked) return a.checked ? 1 : -1;
+    return prioOrder[a.prio] - prioOrder[b.prio];
+  });
+
+  let html = '';
+  sorted.forEach(item => {
+    const prioColor = item.prio === 'urgente' ? 'var(--danger)' : item.prio === 'opcional' ? 'var(--text-muted)' : 'var(--text-secondary)';
+    html += '<div class="card animate-in">' +
+      '<div class="check-item ' + (item.checked ? 'checked' : '') + '" onclick="toggleListItem(' + item.id + ')">' +
+        '<input type="checkbox" ' + (item.checked ? 'checked' : '') + ' onclick="event.stopPropagation()">' +
+        '<span>' + escapeHtml(item.name) + ' <span style="color:' + prioColor + ';font-size:12px;">(' + item.qty + ' ' + item.unit + ')</span></span>' +
+      '</div>' +
+      '<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">' +
+        '<button class="btn-secondary" style="width:auto; padding:6px 14px; font-size:12px;" onclick="moveToStock(' + item.id + ')">Al stock</button>' +
+        '<button class="btn-secondary" style="width:auto; padding:6px 14px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="deleteListItem(' + item.id + ')">Eliminar</button>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleListItem(id) {
+  const item = listItems.find(x => x.id === id);
+  if (item) {
+    item.checked = !item.checked;
+    saveData();
+    renderList();
+  }
+}
+
+function saveListItem() {
+  const name = document.getElementById('list-name').value.trim();
+  const qty = parseInt(document.getElementById('list-qty').value) || 1;
+  const unit = document.getElementById('list-unit').value.trim() || 'unid';
+  const prio = document.querySelector('#list-priority .tag.selected')?.dataset.prio || 'normal';
+
+  if (!name) { showToast('Ingresa un producto'); return; }
+
+  listItems.push({ id: Date.now(), name, qty, unit, prio, checked: false });
+  saveData();
+  closeModal('modal-add-list');
+  document.getElementById('list-name').value = '';
+  document.getElementById('list-qty').value = '';
+  document.getElementById('list-unit').value = '';
+  renderList();
+  showToast('"' + name + '" agregado a la lista');
+}
+
+function deleteListItem(id) {
+  listItems = listItems.filter(x => x.id !== id);
+  saveData();
+  renderList();
+  showToast('Item eliminado');
+}
+
+function moveToStock(id) {
+  const item = listItems.find(x => x.id === id);
+  if (!item) return;
+
+  const existing = products.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+  if (existing) {
+    existing.qty += item.qty;
+    addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
+  } else {
+    products.push({
+      id: Date.now(),
+      name: item.name,
+      qty: item.qty,
+      unit: item.unit,
+      max: Math.max(item.qty * 2, 10),
+      cat: 'almacen',
+      created: Date.now()
+    });
+    addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
+  }
+
+  listItems = listItems.filter(x => x.id !== id);
+  saveData();
+  renderList();
+  showToast('"' + item.name + '" movido al stock');
+}
+
+// ===================== HISTORY =====================
+function addHistory(title, type) {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  historyLog.unshift({
+    id: Date.now(),
+    date: 'Hoy, ' + timeStr,
+    title,
+    desc: type === 'buy' ? 'Producto agregado al stock' : 'Stock actualizado',
+    type
+  });
+  if (historyLog.length > 50) historyLog = historyLog.slice(0, 50);
+  saveData();
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-content');
+  if (historyLog.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">&#128203;</div><div class="empty-text">Sin actividad reciente</div></div>';
+    return;
+  }
+  let html = '';
+  historyLog.forEach(h => {
+    html += '<div class="card animate-in">' +
+      '<div class="history-date">' + escapeHtml(h.date) + '</div>' +
+      '<div class="history-title">' + escapeHtml(h.title) + '</div>' +
+      '<div class="history-desc">' + escapeHtml(h.desc) + '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// ===================== SETTINGS =====================
+function toggleSetting(card) {
+  const toggle = card.querySelector('.toggle');
+  if (!toggle) {
+    const label = card.querySelector('.setting-label').textContent;
+    if (label.includes('Umbral')) {
+      const newVal = prompt('Nuevo umbral de alerta (%):', settings.threshold);
+      if (newVal && !isNaN(newVal)) {
+        settings.threshold = Math.min(100, Math.max(1, parseInt(newVal)));
+        document.getElementById('threshold-display').textContent = settings.threshold + '%';
+        saveData();
+        showToast('Umbral actualizado: ' + settings.threshold + '%');
+      }
+    } else if (label.includes('Borrar')) {
+      if (confirm('Estas seguro? Se borraran TODOS los datos permanentemente.')) {
+        localStorage.clear();
+        products = []; listItems = []; historyLog = [];
+        settings = { notifications:true, threshold:20 };
+        saveData();
+        renderStock(); renderList(); renderHistory();
+        showToast('Todos los datos borrados');
+      }
+    }
+    return;
+  }
+  toggle.classList.toggle('on');
+  const setting = toggle.dataset.setting;
+  settings[setting] = toggle.classList.contains('on');
+  saveData();
+  showToast(setting === 'notifications' ? (settings.notifications ? 'Notificaciones activadas' : 'Notificaciones desactivadas') : 'Ajuste guardado');
+}
+
+// ===================== SERVICE WORKER =====================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => console.log('SW registered'))
+    .catch(err => console.log('SW registration failed:', err));
+}
+
+// Initial render
+renderStock();
+</script>
+</body>
+</html>
