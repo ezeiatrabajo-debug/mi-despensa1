@@ -212,7 +212,7 @@
   .history-desc { font-size:13px; color:var(--text-secondary); margin-top:3px; }
 
   /* RECIPE STYLES */
-  .search-bar { display:flex; gap:10px; padding: 0 0 12px; }
+  .search-bar { display:flex; gap:10px; padding: 0 0 12px; position:relative; }
   .search-input {
     flex:1; padding:12px 16px;
     background:var(--surface); border:1px solid var(--border);
@@ -296,6 +296,58 @@
     background:var(--bg); padding:4px 10px; border-radius:20px;
   }
 
+  /* SUGGESTIONS DROPDOWN */
+  .suggestions-dropdown {
+    position:absolute; top:100%; left:0; right:0;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); margin-top:4px;
+    max-height:240px; overflow-y:auto; z-index:50;
+    display:none;
+  }
+  .suggestions-dropdown.active { display:block; }
+  .suggestion-item {
+    padding:10px 14px; cursor:pointer;
+    border-bottom:1px solid var(--border);
+    font-size:14px; display:flex; align-items:center; gap:8px;
+  }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-item:hover { background:var(--surface-hover); }
+  .suggestion-item .sugg-icon { font-size:16px; }
+  .suggestion-item .sugg-text { flex:1; }
+  .suggestion-item .sugg-meta { font-size:11px; color:var(--text-muted); }
+
+  /* FILTER CHIPS */
+  .filter-chips {
+    display:flex; gap:8px; overflow-x:auto; padding: 0 0 12px;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .filter-chips::-webkit-scrollbar { display:none; }
+  .filter-chip {
+    padding:8px 16px; border-radius:20px;
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--text-secondary); font-size:13px; font-weight:500;
+    cursor:pointer; transition:all 0.15s; white-space:nowrap;
+    flex-shrink:0;
+  }
+  .filter-chip.active {
+    background:var(--accent); color:var(--bg); border-color:var(--accent);
+  }
+  .filter-chip:active { transform:scale(0.95); }
+
+  /* CATEGORY GRID */
+  .category-grid {
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;
+  }
+  .category-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:16px;
+    text-align:center; cursor:pointer; transition:all 0.15s;
+  }
+  .category-card:active { transform:scale(0.97); }
+  .category-card .cat-emoji { font-size:32px; margin-bottom:8px; }
+  .category-card .cat-name { font-weight:600; font-size:14px; }
+  .category-card .cat-count { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 
@@ -349,11 +401,21 @@
       <div class="header">
         <h1>Recetas</h1>
       </div>
-      <div class="search-bar" style="padding: 0 0 12px;">
-        <input class="search-input" id="recipe-search-input" placeholder="Buscar receta... (ej: pasta, pollo, tarta)" onkeydown="if(event.key==='Enter')searchRecipes()">
-        <button class="search-btn" id="recipe-search-btn" onclick="searchRecipes()">Buscar</button>
+      <div class="search-bar" style="padding: 0 0 12px; position:relative;">
+        <input class="search-input" id="recipe-search-input" placeholder="Buscar receta... (ej: pasta, pollo, tarta)" oninput="handleSearchInput(this)" onkeydown="if(event.key==='Enter'){hideSuggestions();searchRecipes();}">
+        <button class="search-btn" id="recipe-search-btn" onclick="hideSuggestions();searchRecipes()">Buscar</button>
+        <div class="suggestions-dropdown" id="suggestions-dropdown"></div>
       </div>
       <div id="recipes-content">
+        <div class="section-title">Explorar por categoria</div>
+        <div class="filter-chips" id="category-filters">
+          <button class="filter-chip active" onclick="filterByCategory('all')">Todas</button>
+          <button class="filter-chip" onclick="filterByCategory('Postre')">Postres</button>
+          <button class="filter-chip" onclick="filterByCategory('Plato principal')">Platos</button>
+          <button class="filter-chip" onclick="filterByCategory('Desayuno')">Desayuno</button>
+          <button class="filter-chip" onclick="filterByCategory('Entrada')">Entradas</button>
+          <button class="filter-chip" onclick="filterByCategory('Vegetariano')">Vegetariano</button>
+        </div>
         <div class="section-title">Recetas Populares</div>
         <div id="popular-recipes"></div>
       </div>
@@ -413,7 +475,7 @@
         </div>
       </div>
       <div style="text-align:center; margin-top:40px; color:var(--text-muted); font-size:12px;">
-        Mi Despensa v2.0
+        Mi Despensa v2.1
       </div>
     </div>
 
@@ -524,635 +586,1216 @@
 </div>
 
 <script>
-// ===================== LOCAL RECIPES =====================
-const localRecipes = [
+// ===================== CATÁLOGO DE RECETAS =====================
+const RECIPES = [
   {
-    id: 'local_1', name: 'Torta Pavlova', category: 'Postre', area: 'Nueva Zelanda',
-    image: 'https://www.themealdb.com/images/media/meals/ruwpww1439907482.jpg',
-    tags: 'Dulce,Frutas',
+    id: "r1", title: "Milanesa a la Napolitana",
+    image: "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400&h=300&fit=crop",
+    time: "45 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Carnes"],
     ingredients: [
-      { name: 'Claras de huevo', measure: '4 unidades' },
-      { name: 'Azucar', measure: '250g' },
-      { name: 'Maicena', measure: '1 cucharadita' },
-      { name: 'Vinagre blanco', measure: '1 cucharadita' },
-      { name: 'Crema de leche', measure: '300ml' },
-      { name: 'Frutillas', measure: '200g' },
-      { name: 'Kiwi', measure: '2 unidades' },
-      { name: 'Arandanos', measure: '100g' }
+      {name: "Filetes de nalga", qty: 4, unit: "unid"},
+      {name: "Huevos", qty: 2, unit: "unid"},
+      {name: "Pan rallado", qty: 200, unit: "g"},
+      {name: "Queso mozzarella", qty: 300, unit: "g"},
+      {name: "Salsa de tomate", qty: 200, unit: "g"},
+      {name: "Orégano", qty: 1, unit: "cda"},
+      {name: "Aceite", qty: 200, unit: "ml"},
+      {name: "Sal", qty: 1, unit: "pizca"},
+      {name: "Pimienta", qty: 1, unit: "pizca"}
     ],
-    instructions: 'Precalentar el horno a 150C. Batir las claras a punto de nieve. Agregar el azucar gradualmente batiendo hasta que se disuelva. Incorporar la maicena y el vinagre. Formar un disco sobre papel manteca. Hornear 1 hora. Dejar enfriar en el horno. Cubrir con crema batida y frutas.'
+    steps: [
+      "Batir los huevos con sal y pimienta en un bowl.",
+      "Pasar los filetes por el huevo y luego por el pan rallado.",
+      "Freír las milanesas en aceite caliente hasta dorar por ambos lados.",
+      "Colocar las milanesas en una fuente para horno.",
+      "Cubrir con salsa de tomate, espolvorear orégano y colocar el queso mozzarella.",
+      "Llevar al horno fuerte hasta que el queso se derrita y gratine."
+    ]
   },
   {
-    id: 'local_2', name: 'Chocotorta', category: 'Postre', area: 'Argentina',
-    image: 'https://www.themealdb.com/images/media/meals/ysxwuq1487320185.jpg',
-    tags: 'Sin horno,Dulce',
+    id: "r2", title: "Tarta de Espinaca y Ricota",
+    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
+    time: "60 min", servings: 6, difficulty: "Media",
+    categories: ["Plato principal", "Vegetariano", "Entrada"],
     ingredients: [
-      { name: 'Galletitas de chocolate', measure: '500g' },
-      { name: 'Queso crema', measure: '400g' },
-      { name: 'Dulce de leche', measure: '400g' },
-      { name: 'Cafe', measure: '200ml' },
-      { name: 'Leche', measure: '100ml' }
+      {name: "Masa para tarta", qty: 1, unit: "unid"},
+      {name: "Espinaca", qty: 500, unit: "g"},
+      {name: "Ricota", qty: 400, unit: "g"},
+      {name: "Huevos", qty: 3, unit: "unid"},
+      {name: "Queso rallado", qty: 100, unit: "g"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Nuez moscada", qty: 1, unit: "pizca"},
+      {name: "Sal", qty: 1, unit: "cda"},
+      {name: "Pimienta", qty: 1, unit: "pizca"}
     ],
-    instructions: 'Mezclar el queso crema con el dulce de leche hasta obtener una crema homogenea. Preparar el cafe con leche. Mojar las galletitas brevemente en el cafe. Intercalar capas de galletitas y crema. Refrigerar por minimo 4 horas. Decorar con ralladura de chocolate.'
+    steps: [
+      "Blanquear la espinaca en agua hirviendo, escurrir y picar.",
+      "Saltear la cebolla picada hasta transparentar.",
+      "Mezclar la ricota con los huevos, queso rallado, nuez moscada, sal y pimienta.",
+      "Incorporar la espinaca y la cebolla a la mezcla.",
+      "Forrar un molde con la masa, verter el relleno y tapar.",
+      "Hornear a 180°C por 35-40 minutos hasta dorar."
+    ]
   },
   {
-    id: 'local_3', name: 'Tarta de Manzana', category: 'Postre', area: 'Estados Unidos',
-    image: 'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg',
-    tags: 'Horneado,Clasico',
+    id: "r3", title: "Flan Casero con Caramelo",
+    image: "https://images.unsplash.com/photo-1563729768-6af784d6df1d?w=400&h=300&fit=crop",
+    time: "90 min", servings: 8, difficulty: "Fácil",
+    categories: ["Postre"],
     ingredients: [
-      { name: 'Manzanas', measure: '6 unidades' },
-      { name: 'Azucar', measure: '150g' },
-      { name: 'Canela', measure: '1 cucharadita' },
-      { name: 'Masa quebrada', measure: '1 unidad' },
-      { name: 'Mantequilla', measure: '50g' },
-      { name: 'Huevo', measure: '1 unidad' }
+      {name: "Huevos", qty: 4, unit: "unid"},
+      {name: "Leche", qty: 500, unit: "ml"},
+      {name: "Azúcar", qty: 150, unit: "g"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"},
+      {name: "Azúcar (caramelo)", qty: 100, unit: "g"},
+      {name: "Agua", qty: 2, unit: "cda"}
     ],
-    instructions: 'Pelar y cortar las manzanas en laminas. Mezclar con azucar y canela. Forrar un molde con la masa. Colocar las manzanas. Pintar con huevo batido. Agregar trozos de mantequilla. Hornear a 180C por 45 minutos.'
+    steps: [
+      "Preparar el caramelo: derretir el azúcar con el agua a fuego medio hasta obtener color ámbar.",
+      "Verter el caramelo en el fondo del molde y distribuir.",
+      "Batir los huevos con el azúcar hasta disolver.",
+      "Agregar la leche tibia y la vainilla, mezclar suavemente.",
+      "Verter la mezcla sobre el caramelo.",
+      "Cocinar a baño María en horno a 160°C por 50-60 minutos.",
+      "Dejar enfriar y desmoldar."
+    ]
   },
   {
-    id: 'local_4', name: 'Pastel de Papa', category: 'Plato principal', area: 'Argentina',
-    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
-    tags: 'Carne,Horneado',
+    id: "r4", title: "Panqueques de Dulce de Leche",
+    image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
+    time: "30 min", servings: 4, difficulty: "Fácil",
+    categories: ["Postre", "Desayuno"],
     ingredients: [
-      { name: 'Papas', measure: '1kg' },
-      { name: 'Carne molida', measure: '500g' },
-      { name: 'Cebolla', measure: '1 unidad' },
-      { name: 'Huevo duro', measure: '3 unidades' },
-      { name: 'Aceitunas', measure: '50g' },
-      { name: 'Leche', measure: '100ml' },
-      { name: 'Mantequilla', measure: '50g' },
-      { name: 'Nuez moscada', measure: '1 pizca' }
+      {name: "Harina", qty: 200, unit: "g"},
+      {name: "Leche", qty: 300, unit: "ml"},
+      {name: "Huevos", qty: 2, unit: "unid"},
+      {name: "Azúcar", qty: 2, unit: "cda"},
+      {name: "Manteca", qty: 30, unit: "g"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"},
+      {name: "Dulce de leche", qty: 200, unit: "g"}
     ],
-    instructions: 'Hacer un pure con las papas, leche, mantequilla y nuez moscada. Saltear la cebolla y la carne. Enmantecar una fuente. Colocar una capa de pure, la carne, huevos picados y aceitunas. Cubrir con el resto del pure. Hornear a 180C por 30 minutos.'
+    steps: [
+      "Mezclar la harina con el azúcar y la sal.",
+      "Agregar los huevos, la leche y la vainilla. Batir hasta obtener una masa homogénea.",
+      "Derretir la manteca e incorporar a la mezcla.",
+      "Dejar reposar 15 minutos.",
+      "Verter porciones en una sartén antiadherente caliente.",
+      "Cocinar hasta dorar por ambos lados.",
+      "Rellenar con dulce de leche y enrollar."
+    ]
   },
   {
-    id: 'local_5', name: 'Risotto de Hongos', category: 'Plato principal', area: 'Italia',
-    image: 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
-    tags: 'Vegetariano,Arroz',
+    id: "r5", title: "Pollo al Horno con Papas",
+    image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop",
+    time: "90 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Carnes"],
     ingredients: [
-      { name: 'Arroz arborio', measure: '300g' },
-      { name: 'Hongos', measure: '300g' },
-      { name: 'Caldo de verduras', measure: '1L' },
-      { name: 'Vino blanco', measure: '100ml' },
-      { name: 'Cebolla', measure: '1 unidad' },
-      { name: 'Queso parmesano', measure: '50g' },
-      { name: 'Mantequilla', measure: '40g' },
-      { name: 'Ajo', measure: '2 dientes' }
+      {name: "Pollo entero", qty: 1, unit: "unid"},
+      {name: "Papas", qty: 6, unit: "unid"},
+      {name: "Cebolla", qty: 2, unit: "unid"},
+      {name: "Ajo", qty: 4, unit: "dientes"},
+      {name: "Limón", qty: 1, unit: "unid"},
+      {name: "Romero", qty: 2, unit: "ramas"},
+      {name: "Aceite de oliva", qty: 3, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "cda"},
+      {name: "Pimienta", qty: 1, unit: "pizca"}
     ],
-    instructions: 'Saltear cebolla y ajo en mantequilla. Agregar los hongos y cocinar 5 minutos. Incorporar el arroz y tostar 2 minutos. Agregar el vino y dejar evaporar. Agregar el caldo caliente cucharon por cucharon, revolviendo constantemente. Cuando el arroz este al dente, retirar del fuego. Agregar queso parmesano y mantequilla. Dejar reposar 2 minutos antes de servir.'
+    steps: [
+      "Precalentar el horno a 200°C.",
+      "Condimentar el pollo con sal, pimienta, ajo, romero, limón y aceite.",
+      "Pelar y cortar las papas en gajos.",
+      "Distribuir las papas y la cebolla alrededor del pollo en una fuente.",
+      "Rociar con aceite de oliva y condimentar.",
+      "Hornear por 60-75 minutos, girando a mitad de cocción.",
+      "Dejar reposar 10 minutos antes de servir."
+    ]
   },
   {
-    id: 'local_6', name: 'Guiso de Lentejas', category: 'Plato principal', area: 'Espana',
-    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
-    tags: 'Vegetariano,Invierno',
+    id: "r6", title: "Ensalada César",
+    image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400&h=300&fit=crop",
+    time: "20 min", servings: 2, difficulty: "Fácil",
+    categories: ["Entrada", "Vegetariano"],
     ingredients: [
-      { name: 'Lentejas', measure: '300g' },
-      { name: 'Zanahoria', measure: '2 unidades' },
-      { name: 'Papa', measure: '2 unidades' },
-      { name: 'Cebolla', measure: '1 unidad' },
-      { name: 'Ajo', measure: '3 dientes' },
-      { name: 'Pimenton', measure: '1 cucharadita' },
-      { name: 'Laurel', measure: '2 hojas' },
-      { name: 'Caldo de verduras', measure: '1.5L' }
+      {name: "Lechuga romana", qty: 1, unit: "unid"},
+      {name: "Crutones", qty: 100, unit: "g"},
+      {name: "Queso parmesano", qty: 50, unit: "g"},
+      {name: "Pechuga de pollo", qty: 1, unit: "unid"},
+      {name: "Mayonesa", qty: 3, unit: "cda"},
+      {name: "Mostaza", qty: 1, unit: "cda"},
+      {name: "Ajo", qty: 1, unit: "diente"},
+      {name: "Jugo de limón", qty: 1, unit: "cda"},
+      {name: "Anchoas", qty: 2, unit: "filetes"}
     ],
-    instructions: 'Saltear cebolla, ajo y zanahoria picada. Agregar el pimenton. Incorporar las lentejas, papas en cubos, laurel y caldo. Cocinar a fuego lento por 45 minutos hasta que las lentejas esten tiernas. Rectificar sal y pimienta. Servir caliente.'
+    steps: [
+      "Cocinar la pechuga a la plancha con sal y pimienta, luego cortar en tiras.",
+      "Para el aderezo: mezclar mayonesa, mostaza, ajo picado, limón y anchoas.",
+      "Lavar y cortar la lechuga en trozos grandes.",
+      "En un bowl grande, mezclar la lechuga con el aderezo.",
+      "Agregar los crutones, el pollo y el queso parmesano rallado.",
+      "Servir inmediatamente."
+    ]
   },
   {
-    id: 'local_7', name: 'Tacos de Pollo', category: 'Plato principal', area: 'Mexico',
-    image: 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
-    tags: 'Rapido,Picante',
+    id: "r7", title: "Risotto de Hongos",
+    image: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=300&fit=crop",
+    time: "40 min", servings: 4, difficulty: "Media",
+    categories: ["Plato principal", "Vegetariano"],
     ingredients: [
-      { name: 'Pechuga de pollo', measure: '400g' },
-      { name: 'Tortillas de maiz', measure: '8 unidades' },
-      { name: 'Cebolla morada', measure: '1 unidad' },
-      { name: 'Cilantro', measure: '1 manojo' },
-      { name: 'Limon', measure: '2 unidades' },
-      { name: 'Chile en polvo', measure: '1 cucharada' },
-      { name: 'Aguacate', measure: '1 unidad' },
-      { name: 'Crema agria', measure: '100g' }
+      {name: "Arroz arborio", qty: 300, unit: "g"},
+      {name: "Hongos mixtos", qty: 300, unit: "g"},
+      {name: "Caldo de verduras", qty: 1, unit: "litro"},
+      {name: "Vino blanco", qty: 100, unit: "ml"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Manteca", qty: 50, unit: "g"},
+      {name: "Queso parmesano", qty: 80, unit: "g"},
+      {name: "Ajo", qty: 2, unit: "dientes"},
+      {name: "Perejil", qty: 2, unit: "cda"}
     ],
-    instructions: 'Cortar el pollo en tiras y sazonar con chile, sal y pimienta. Saltear hasta dorar. Calentar las tortillas. Armar los tacos con pollo, cebolla picada, cilantro, aguacate en cubos y un chorrito de limon. Servir con crema agria al lado.'
+    steps: [
+      "Saltear los hongos en manteca con ajo hasta dorar. Reservar.",
+      "En la misma olla, saltear la cebolla picada hasta transparentar.",
+      "Agregar el arroz y tostar por 2 minutos.",
+      "Verter el vino blanco y dejar evaporar.",
+      "Agregar el caldo caliente cucharón por cucharón, revolviendo constantemente.",
+      "Cuando el arroz esté al dente, incorporar los hongos, manteca y queso parmesano.",
+      "Dejar reposar 2 minutos y servir con perejil fresco."
+    ]
   },
   {
-    id: 'local_8', name: 'Sopa de Calabaza', category: 'Entrada', area: 'Francia',
-    image: 'https://www.themealdb.com/images/media/meals/ruwpww1439907482.jpg',
-    tags: 'Vegetariano,Cremoso',
+    id: "r8", title: "Tacos de Carne",
+    image: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=400&h=300&fit=crop",
+    time: "35 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Carnes"],
     ingredients: [
-      { name: 'Calabaza', measure: '1kg' },
-      { name: 'Cebolla', measure: '1 unidad' },
-      { name: 'Ajo', measure: '2 dientes' },
-      { name: 'Caldo de verduras', measure: '1L' },
-      { name: 'Crema de leche', measure: '100ml' },
-      { name: 'Nuez moscada', measure: '1 pizca' },
-      { name: 'Mantequilla', measure: '30g' }
+      {name: "Carne de res", qty: 500, unit: "g"},
+      {name: "Tortillas de maíz", qty: 8, unit: "unid"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Cilantro", qty: 1, unit: "puñado"},
+      {name: "Limón", qty: 2, unit: "unid"},
+      {name: "Comino", qty: 1, unit: "cda"},
+      {name: "Pimentón", qty: 1, unit: "cda"},
+      {name: "Ajo en polvo", qty: 1, unit: "cda"},
+      {name: "Aceite", qty: 2, unit: "cda"}
     ],
-    instructions: 'Saltear cebolla y ajo en mantequilla. Agregar la calabaza en cubos y cocinar 5 minutos. Cubrir con caldo y cocinar 25 minutos. Licuar hasta obtener una crema suave. Agregar la crema de leche y nuez moscada. Servir caliente con croutons.'
+    steps: [
+      "Cortar la carne en tiras finas contra la fibra.",
+      "Mezclar comino, pimentón, ajo en polvo, sal y pimienta.",
+      "Condimentar la carne con la mezcla de especias.",
+      "Saltear la carne en aceite caliente a fuego alto por 3-4 minutos.",
+      "Calentar las tortillas en una sartén seca.",
+      "Servir la carne en las tortillas con cebolla, cilantro y limón."
+    ]
   },
   {
-    id: 'local_9', name: 'Panqueques de Banana', category: 'Desayuno', area: 'Estados Unidos',
-    image: 'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg',
-    tags: 'Dulce,Rapido',
+    id: "r9", title: "Tiramisú Clásico",
+    image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400&h=300&fit=crop",
+    time: "30 min", servings: 8, difficulty: "Media",
+    categories: ["Postre"],
     ingredients: [
-      { name: 'Bananas maduras', measure: '2 unidades' },
-      { name: 'Huevo', measure: '1 unidad' },
-      { name: 'Harina', measure: '100g' },
-      { name: 'Leche', measure: '100ml' },
-      { name: 'Polvo de hornear', measure: '1 cucharadita' },
-      { name: 'Miel', measure: 'al gusto' },
-      { name: 'Mantequilla', measure: 'para cocinar' }
+      {name: "Queso mascarpone", qty: 500, unit: "g"},
+      {name: "Huevos", qty: 4, unit: "unid"},
+      {name: "Azúcar", qty: 100, unit: "g"},
+      {name: "Café fuerte", qty: 300, unit: "ml"},
+      {name: "Bizcochos de soletilla", qty: 200, unit: "g"},
+      {name: "Cacao en polvo", qty: 2, unit: "cda"},
+      {name: "Amaretto", qty: 2, unit: "cda"}
     ],
-    instructions: 'Machacar las bananas con un tenedor. Batir el huevo y mezclar con las bananas. Agregar harina, leche y polvo de hornear. Mezclar hasta obtener una masa homogenea. Cocinar porciones en una sarten con mantequilla. Dar vuelta cuando aparezcan burbujas. Servir con miel.'
+    steps: [
+      "Separar las claras de las yemas.",
+      "Batir las yemas con el azúcar hasta obtener una crema pálida.",
+      "Incorporar el mascarpone suavemente.",
+      "Batir las claras a nieve y envolver en la crema.",
+      "Mezclar el café frío con el amaretto.",
+      "Mojar los bizcochos en el café y disponer en una fuente.",
+      "Cubrir con una capa de crema. Repetir capas.",
+      "Refrigerar por mínimo 4 horas y espolvorear cacao antes de servir."
+    ]
   },
   {
-    id: 'local_10', name: 'Ensalada Cesar', category: 'Entrada', area: 'Mexico',
-    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
-    tags: 'Clasico,Pollo',
+    id: "r10", title: "Guiso de Lentejas",
+    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
+    time: "60 min", servings: 6, difficulty: "Fácil",
+    categories: ["Plato principal", "Vegetariano"],
     ingredients: [
-      { name: 'Lechuga romana', measure: '1 unidad' },
-      { name: 'Pechuga de pollo', measure: '200g' },
-      { name: 'Croutons', measure: '50g' },
-      { name: 'Queso parmesano', measure: '30g' },
-      { name: 'Anchoas', measure: '4 filetes' },
-      { name: 'Huevo', measure: '1 unidad' },
-      { name: 'Aceite de oliva', measure: '100ml' },
-      { name: 'Jugo de limon', measure: '1 cucharada' },
-      { name: 'Ajo', measure: '1 diente' }
+      {name: "Lentejas", qty: 300, unit: "g"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Zanahoria", qty: 2, unit: "unid"},
+      {name: "Papa", qty: 2, unit: "unid"},
+      {name: "Ajo", qty: 3, unit: "dientes"},
+      {name: "Pimentón", qty: 1, unit: "cda"},
+      {name: "Comino", qty: 1, unit: "cda"},
+      {name: "Caldo de verduras", qty: 1, unit: "litro"},
+      {name: "Tomate", qty: 2, unit: "unid"},
+      {name: "Aceite de oliva", qty: 3, unit: "cda"}
     ],
-    instructions: 'Hacer la salsa: licuar anchoas, ajo, huevo, jugo de limon y aceite de oliva. Saltear el pollo cortado en tiras. Lavar y cortar la lechuga. Mezclar la lechuga con la salsa. Agregar el pollo, croutons y queso parmesano rallado.'
+    steps: [
+      "Lavar las lentejas y reservar.",
+      "Saltear la cebolla, ajo, zanahoria y papa en cubos.",
+      "Agregar el tomate picado, pimentón y comino.",
+      "Incorporar las lentejas y el caldo caliente.",
+      "Cocinar a fuego medio por 35-40 minutos hasta que las lentejas estén tiernas.",
+      "Rectificar sal y pimienta. Servir caliente."
+    ]
+  },
+  {
+    id: "r11", title: "Pasta con Pesto Genovés",
+    image: "https://images.unsplash.com/photo-1473093295043-cd812d0e601?w=400&h=300&fit=crop",
+    time: "20 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Vegetariano"],
+    ingredients: [
+      {name: "Fettuccine", qty: 400, unit: "g"},
+      {name: "Albahaca fresca", qty: 60, unit: "g"},
+      {name: "Piñones", qty: 30, unit: "g"},
+      {name: "Ajo", qty: 1, unit: "diente"},
+      {name: "Queso parmesano", qty: 50, unit: "g"},
+      {name: "Aceite de oliva", qty: 80, unit: "ml"},
+      {name: "Sal", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Hervir abundante agua con sal y cocinar la pasta al dente.",
+      "En un procesador, triturar la albahaca, piñones, ajo y queso.",
+      "Agregar el aceite en hilo mientras se procesa.",
+      "Reservar un poco de agua de cocción.",
+      "Escurrir la pasta y mezclar inmediatamente con el pesto.",
+      "Agregar un poco de agua de cocción si es necesario para emulsionar.",
+      "Servir con queso parmesano rallado."
+    ]
+  },
+  {
+    id: "r12", title: "Waffles Belgas",
+    image: "https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&h=300&fit=crop",
+    time: "25 min", servings: 4, difficulty: "Fácil",
+    categories: ["Desayuno", "Postre"],
+    ingredients: [
+      {name: "Harina", qty: 250, unit: "g"},
+      {name: "Leche", qty: 250, unit: "ml"},
+      {name: "Huevos", qty: 2, unit: "unid"},
+      {name: "Manteca derretida", qty: 100, unit: "g"},
+      {name: "Azúcar", qty: 50, unit: "g"},
+      {name: "Polvo de hornear", qty: 2, unit: "cda"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"},
+      {name: "Miel", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Mezclar la harina, azúcar y polvo de hornear.",
+      "Batir los huevos con la leche y la vainilla.",
+      "Incorporar los líquidos a los secos sin sobrebatir.",
+      "Agregar la manteca derretida.",
+      "Calentar la wafflera y engrasar ligeramente.",
+      "Verter la mezcla y cocinar hasta dorar y crujiente.",
+      "Servir con miel, frutas o dulce de leche."
+    ]
+  },
+  {
+    id: "r13", title: "Sopa de Calabaza",
+    image: "https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&h=300&fit=crop",
+    time: "45 min", servings: 4, difficulty: "Fácil",
+    categories: ["Entrada", "Vegetariano"],
+    ingredients: [
+      {name: "Calabaza", qty: 1, unit: "unid"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Ajo", qty: 2, unit: "dientes"},
+      {name: "Caldo de verduras", qty: 500, unit: "ml"},
+      {name: "Crema de leche", qty: 100, unit: "ml"},
+      {name: "Nuez moscada", qty: 1, unit: "pizca"},
+      {name: "Aceite de oliva", qty: 2, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "cda"},
+      {name: "Pimienta", qty: 1, unit: "pizca"}
+    ],
+    steps: [
+      "Pelar y cortar la calabaza en cubos.",
+      "Saltear la cebolla y el ajo en aceite.",
+      "Agregar la calabaza y cocinar 5 minutos.",
+      "Verter el caldo y cocinar hasta que la calabaza esté tierna.",
+      "Procesar hasta obtener una crema suave.",
+      "Agregar la crema de leche y la nuez moscada.",
+      "Rectificar sazón y servir caliente."
+    ]
+  },
+  {
+    id: "r14", title: "Empanadas de Carne",
+    image: "https://images.unsplash.com/photo-1530554764233-e79e16c91d08?w=400&h=300&fit=crop",
+    time: "60 min", servings: 12, difficulty: "Media",
+    categories: ["Plato principal", "Entrada", "Carnes"],
+    ingredients: [
+      {name: "Tapas para empanadas", qty: 12, unit: "unid"},
+      {name: "Carne picada", qty: 500, unit: "g"},
+      {name: "Cebolla", qty: 2, unit: "unid"},
+      {name: "Huevos duros", qty: 3, unit: "unid"},
+      {name: "Aceitunas", qty: 12, unit: "unid"},
+      {name: "Comino", qty: 1, unit: "cda"},
+      {name: "Pimentón", qty: 1, unit: "cda"},
+      {name: "Aceite", qty: 2, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Saltear la cebolla picada hasta transparentar.",
+      "Agregar la carne picada y desmenuzar mientras se cocina.",
+      "Condimentar con comino, pimentón, sal y pimienta.",
+      "Dejar enfriar el relleno.",
+      "Rellenar cada tapa con el relleno, huevo picado y aceituna.",
+      "Cerrar y repulgar las empanadas.",
+      "Hornear a 200°C por 15-20 minutos hasta dorar."
+    ]
+  },
+  {
+    id: "r15", title: "Brownies de Chocolate",
+    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&h=300&fit=crop",
+    time: "45 min", servings: 9, difficulty: "Fácil",
+    categories: ["Postre"],
+    ingredients: [
+      {name: "Chocolate negro", qty: 200, unit: "g"},
+      {name: "Manteca", qty: 150, unit: "g"},
+      {name: "Azúcar", qty: 200, unit: "g"},
+      {name: "Huevos", qty: 3, unit: "unid"},
+      {name: "Harina", qty: 100, unit: "g"},
+      {name: "Cacao en polvo", qty: 2, unit: "cda"},
+      {name: "Nueces", qty: 50, unit: "g"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Derretir el chocolate con la manteca a baño María.",
+      "Batir los huevos con el azúcar hasta disolver.",
+      "Incorporar el chocolate derretido y la vainilla.",
+      "Agregar la harina tamizada y el cacao, mezclar suavemente.",
+      "Incorporar las nueces picadas.",
+      "Verter en un molde enmantecado y enharinado.",
+      "Hornear a 170°C por 25-30 minutos. El centro debe quedar húmedo.",
+      "Dejar enfriar antes de cortar."
+    ]
+  },
+  {
+    id: "r16", title: "Omelette de Jamón y Queso",
+    image: "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
+    time: "10 min", servings: 1, difficulty: "Fácil",
+    categories: ["Desayuno", "Entrada"],
+    ingredients: [
+      {name: "Huevos", qty: 3, unit: "unid"},
+      {name: "Jamón cocido", qty: 2, unit: "fetas"},
+      {name: "Queso mozzarella", qty: 50, unit: "g"},
+      {name: "Manteca", qty: 1, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "pizca"},
+      {name: "Pimienta", qty: 1, unit: "pizca"},
+      {name: "Cebolla de verdeo", qty: 1, unit: "unid"}
+    ],
+    steps: [
+      "Batir los huevos con sal y pimienta.",
+      "Derretir la manteca en una sartén antiadherente a fuego medio.",
+      "Verter los huevos y dejar que cuajen por debajo.",
+      "Colocar el jamón y el queso sobre una mitad.",
+      "Doblar la omelette por la mitad.",
+      "Cocinar 1 minuto más hasta que el queso se derrita.",
+      "Servir con cebolla de verdeo picada."
+    ]
+  },
+  {
+    id: "r17", title: "Pizza Margarita",
+    image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=300&fit=crop",
+    time: "90 min", servings: 4, difficulty: "Media",
+    categories: ["Plato principal", "Vegetariano"],
+    ingredients: [
+      {name: "Harina", qty: 300, unit: "g"},
+      {name: "Levadura fresca", qty: 15, unit: "g"},
+      {name: "Agua tibia", qty: 180, unit: "ml"},
+      {name: "Sal", qty: 1, unit: "cda"},
+      {name: "Aceite de oliva", qty: 2, unit: "cda"},
+      {name: "Salsa de tomate", qty: 200, unit: "g"},
+      {name: "Queso mozzarella", qty: 250, unit: "g"},
+      {name: "Albahaca fresca", qty: 1, unit: "puñado"}
+    ],
+    steps: [
+      "Disolver la levadura en el agua tibia.",
+      "Mezclar la harina con la sal, agregar la levadura y el aceite.",
+      "Amasar 10 minutos hasta obtener una masa lisa.",
+      "Dejar leudar tapada por 1 hora o hasta duplicar su volumen.",
+      "Estirar la masa sobre una bandeja enharinada.",
+      "Cubrir con salsa de tomate, queso mozzarella y albahaca.",
+      "Hornear a máxima temperatura (250°C) por 10-12 minutos."
+    ]
+  },
+  {
+    id: "r18", title: "Salmón a la Plancha",
+    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
+    time: "20 min", servings: 2, difficulty: "Fácil",
+    categories: ["Plato principal"],
+    ingredients: [
+      {name: "Filetes de salmón", qty: 2, unit: "unid"},
+      {name: "Limón", qty: 1, unit: "unid"},
+      {name: "Ajo", qty: 2, unit: "dientes"},
+      {name: "Eneldo fresco", qty: 1, unit: "cda"},
+      {name: "Aceite de oliva", qty: 2, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "pizca"},
+      {name: "Pimienta", qty: 1, unit: "pizca"},
+      {name: "Espárragos", qty: 10, unit: "unid"}
+    ],
+    steps: [
+      "Condimentar los filetes de salmón con sal, pimienta y jugo de limón.",
+      "Calentar una sartén con aceite de oliva a fuego medio-alto.",
+      "Cocinar el salmón con la piel hacia abajo por 4 minutos.",
+      "Voltear y cocinar 3 minutos más.",
+      "En la misma sartén, saltear los espárragos con ajo.",
+      "Servir el salmón con los espárragos y eneldo fresco."
+    ]
+  },
+  {
+    id: "r19", title: "Tortilla de Papas",
+    image: "https://images.unsplash.com/photo-1626202378383-2413957d7785?w=400&h=300&fit=crop",
+    time: "40 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Entrada", "Vegetariano"],
+    ingredients: [
+      {name: "Papas", qty: 4, unit: "unid"},
+      {name: "Huevos", qty: 5, unit: "unid"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Aceite", qty: 200, unit: "ml"},
+      {name: "Sal", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Pelar y cortar las papas en rodajas finas.",
+      "Cortar la cebolla en juliana.",
+      "Freír las papas y la cebolla en aceite caliente hasta que estén tiernas.",
+      "Escurrir bien el exceso de aceite.",
+      "Batir los huevos con sal e incorporar las papas y cebolla.",
+      "Verter en una sartén con un poco de aceite caliente.",
+      "Cocinar a fuego lento, dar vuelta con un plato y dorar por el otro lado."
+    ]
+  },
+  {
+    id: "r20", title: "Churros con Chocolate",
+    image: "https://images.unsplash.com/photo-1626202378383-2413957d7785?w=400&h=300&fit=crop",
+    time: "30 min", servings: 6, difficulty: "Media",
+    categories: ["Postre", "Desayuno"],
+    ingredients: [
+      {name: "Harina", qty: 250, unit: "g"},
+      {name: "Agua", qty: 250, unit: "ml"},
+      {name: "Manteca", qty: 50, unit: "g"},
+      {name: "Azúcar", qty: 2, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "pizca"},
+      {name: "Chocolate para taza", qty: 200, unit: "g"},
+      {name: "Leche", qty: 300, unit: "ml"},
+      {name: "Aceite para freír", qty: 500, unit: "ml"},
+      {name: "Azúcar (cobertura)", qty: 100, unit: "g"},
+      {name: "Canela", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Hervir el agua con la manteca, azúcar y sal.",
+      "Retirar del fuego y agregar la harina de golpe. Mezclar vigorosamente.",
+      "Dejar enfriar ligeramente e incorporar los huevos uno a uno.",
+      "Colocar la masa en una manga con boquilla estrellada.",
+      "Freír en aceite caliente formando los churros.",
+      "Escurrir y rebozar en azúcar con canela.",
+      "Para el chocolate: derretir el chocolate con la leche a fuego lento."
+    ]
+  },
+  {
+    id: "r21", title: "Revuelto de Gramajo",
+    image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
+    time: "20 min", servings: 2, difficulty: "Fácil",
+    categories: ["Plato principal", "Entrada"],
+    ingredients: [
+      {name: "Papas", qty: 2, unit: "unid"},
+      {name: "Huevos", qty: 4, unit: "unid"},
+      {name: "Jamón cocido", qty: 100, unit: "g"},
+      {name: "Arvejas", qty: 100, unit: "g"},
+      {name: "Cebolla de verdeo", qty: 2, unit: "unid"},
+      {name: "Aceite", qty: 3, unit: "cda"},
+      {name: "Sal", qty: 1, unit: "pizca"},
+      {name: "Pimienta", qty: 1, unit: "pizca"}
+    ],
+    steps: [
+      "Cortar las papas en juliana y freírlas hasta dorar. Escurrir.",
+      "Cortar el jamón en juliana.",
+      "Batir los huevos con sal y pimienta.",
+      "En una sartén con aceite, saltear las arvejas y el jamón.",
+      "Agregar las papas fritas y las cebollas de verdeo.",
+      "Verter los huevos y revolver suavemente hasta que cuajen.",
+      "Servir inmediatamente."
+    ]
+  },
+  {
+    id: "r22", title: "Pudin de Pan",
+    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&h=300&fit=crop",
+    time: "60 min", servings: 6, difficulty: "Fácil",
+    categories: ["Postre"],
+    ingredients: [
+      {name: "Pan duro", qty: 300, unit: "g"},
+      {name: "Leche", qty: 500, unit: "ml"},
+      {name: "Huevos", qty: 3, unit: "unid"},
+      {name: "Azúcar", qty: 150, unit: "g"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"},
+      {name: "Pasas de uva", qty: 50, unit: "g"},
+      {name: "Canela", qty: 1, unit: "cda"},
+      {name: "Azúcar (caramelo)", qty: 100, unit: "g"}
+    ],
+    steps: [
+      "Cortar el pan en cubos y remojar en la leche tibia por 15 minutos.",
+      "Preparar el caramelo y verter en el fondo del molde.",
+      "Batir los huevos con el azúcar y la vainilla.",
+      "Incorporar el pan remojado, las pasas y la canela.",
+      "Verter la mezcla en el molde.",
+      "Hornear a baño María a 160°C por 45 minutos.",
+      "Dejar enfriar y desmoldar."
+    ]
+  },
+  {
+    id: "r23", title: "Fajitas de Pollo",
+    image: "https://images.unsplash.com/photo-1534352956036-cd81e27fed21?w=400&h=300&fit=crop",
+    time: "30 min", servings: 4, difficulty: "Fácil",
+    categories: ["Plato principal", "Carnes"],
+    ingredients: [
+      {name: "Pechuga de pollo", qty: 500, unit: "g"},
+      {name: "Pimientos (mix)", qty: 3, unit: "unid"},
+      {name: "Cebolla", qty: 1, unit: "unid"},
+      {name: "Tortillas de harina", qty: 8, unit: "unid"},
+      {name: "Comino", qty: 1, unit: "cda"},
+      {name: "Pimentón", qty: 1, unit: "cda"},
+      {name: "Ajo en polvo", qty: 1, unit: "cda"},
+      {name: "Aceite", qty: 2, unit: "cda"},
+      {name: "Limón", qty: 1, unit: "unid"},
+      {name: "Crema agria", qty: 100, unit: "g"}
+    ],
+    steps: [
+      "Cortar el pollo en tiras y los pimientos y cebolla en juliana.",
+      "Mezclar las especias y condimentar el pollo.",
+      "Saltear el pollo en aceite caliente hasta dorar. Reservar.",
+      "En la misma sartén, saltear los pimientos y la cebolla.",
+      "Volver a incorporar el pollo y mezclar.",
+      "Calentar las tortillas y servir con la mezcla de pollo.",
+      "Acompañar con crema agria y limón."
+    ]
+  },
+  {
+    id: "r24", title: "Arroz con Leche",
+    image: "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=400&h=300&fit=crop",
+    time: "50 min", servings: 6, difficulty: "Fácil",
+    categories: ["Postre", "Desayuno"],
+    ingredients: [
+      {name: "Arroz", qty: 200, unit: "g"},
+      {name: "Leche", qty: 1, unit: "litro"},
+      {name: "Azúcar", qty: 150, unit: "g"},
+      {name: "Canela en rama", qty: 1, unit: "unid"},
+      {name: "Cáscara de limón", qty: 1, unit: "unid"},
+      {name: "Esencia de vainilla", qty: 1, unit: "cda"},
+      {name: "Canela en polvo", qty: 1, unit: "cda"}
+    ],
+    steps: [
+      "Hervir el arroz en agua con la canela en rama y la cáscara de limón.",
+      "Cuando el arroz esté casi tierno, agregar la leche caliente.",
+      "Cocinar a fuego lento revolviendo constantemente.",
+      "Agregar el azúcar y la vainilla.",
+      "Seguir cocinando hasta que espese a gusto.",
+      "Retirar la canela y la cáscara de limón.",
+      "Servir frío o tibio espolvoreado con canela."
+    ]
+  },
+  {
+    id: "r25", title: "Hummus Casero",
+    image: "https://images.unsplash.com/photo-1637949385162-e416fb15b2ce?w=400&h=300&fit=crop",
+    time: "15 min", servings: 4, difficulty: "Fácil",
+    categories: ["Entrada", "Vegetariano"],
+    ingredients: [
+      {name: "Garbanzos cocidos", qty: 400, unit: "g"},
+      {name: "Tahini", qty: 3, unit: "cda"},
+      {name: "Ajo", qty: 2, unit: "dientes"},
+      {name: "Jugo de limón", qty: 2, unit: "cda"},
+      {name: "Aceite de oliva", qty: 3, unit: "cda"},
+      {name: "Comino", qty: 1, unit: "cda"},
+      {name: "Pimentón", qty: 1, unit: "pizca"},
+      {name: "Sal", qty: 1, unit: "pizca"}
+    ],
+    steps: [
+      "Escurrir los garbanzos y reservar un poco del líquido.",
+      "En un procesador, triturar los garbanzos con el ajo.",
+      "Agregar el tahini, jugo de limón, comino y sal.",
+      "Procesar mientras se agrega el aceite de oliva en hilo.",
+      "Agregar un poco del líquido de cocción si es necesario para suavizar.",
+      "Servir en un bowl, hacer un surco en el centro y verter aceite de oliva.",
+      "Espolvorear con pimentón y servir con pan pita."
+    ]
   }
 ];
 
-// ===================== DATA STORE =====================
-let products = JSON.parse(localStorage.getItem('despensa_products')) || [
-  { id:1, name:'Arroz', qty:5, unit:'kg', max:6, cat:'almacen', created:Date.now() },
-  { id:2, name:'Fideos', qty:4, unit:'paq', max:6, cat:'almacen', created:Date.now() },
-  { id:3, name:'Leche', qty:2, unit:'L', max:6, cat:'lacteos', created:Date.now() },
-  { id:4, name:'Huevos', qty:3, unit:'unid', max:20, cat:'almacen', created:Date.now() },
+// ===================== SUGERENCIAS INTELIGENTES =====================
+const SUGGESTIONS_DB = [
+  ...RECIPES.map(r => ({ type: "receta", text: r.title, meta: r.categories.join(", ") })),
+  ...[...new Set(RECIPES.flatMap(r => r.ingredients.map(i => i.name)))].map(name => ({ type: "ingrediente", text: name, meta: "Ingrediente" })),
+  ...[...new Set(RECIPES.flatMap(r => r.categories))].map(cat => ({ type: "categoria", text: cat, meta: "Categoría" })),
+  { type: "receta", text: "pasta", meta: "Búsqueda general" },
+  { type: "receta", text: "pollo", meta: "Búsqueda general" },
+  { type: "receta", text: "carne", meta: "Búsqueda general" },
+  { type: "receta", text: "tarta", meta: "Búsqueda general" },
+  { type: "receta", text: "sopa", meta: "Búsqueda general" },
+  { type: "receta", text: "pescado", meta: "Búsqueda general" },
+  { type: "receta", text: "vegetariano", meta: "Búsqueda general" },
+  { type: "receta", text: "dulce", meta: "Búsqueda general" },
+  { type: "receta", text: "salado", meta: "Búsqueda general" }
 ];
-let listItems = JSON.parse(localStorage.getItem('despensa_list')) || [
-  { id:1, name:'Pan lactal', qty:1, unit:'unid', prio:'normal', checked:false },
-  { id:2, name:'Yogur natural', qty:4, unit:'unid', prio:'normal', checked:false },
-  { id:3, name:'Tomates', qty:1, unit:'kg', prio:'normal', checked:true },
-  { id:4, name:'Huevos (docena)', qty:1, unit:'unid', prio:'urgente', checked:false },
-  { id:5, name:'Aceite de oliva', qty:1, unit:'L', prio:'normal', checked:false },
-];
-let historyLog = JSON.parse(localStorage.getItem('despensa_history')) || [
-  { id:1, date:'Hoy, 9:30 AM', title:'Compra en Supermercado Dia', desc:'12 productos agregados al stock', type:'buy' },
-  { id:2, date:'Ayer, 6:15 PM', title:'Descontaste: 2 huevos, 1L leche', desc:'Stock actualizado', type:'use' },
-  { id:3, date:'25 Jul, 11:00 AM', title:'Compra en Verduleria', desc:'5 productos agregados al stock', type:'buy' },
-];
-let settings = JSON.parse(localStorage.getItem('despensa_settings')) || { notifications:true, threshold:20 };
-let recipeFavorites = JSON.parse(localStorage.getItem('despensa_recipe_favorites')) || [];
-let lastSearchResults = [];
-let currentRecipe = null;
 
-function saveData() {
-  localStorage.setItem('despensa_products', JSON.stringify(products));
-  localStorage.setItem('despensa_list', JSON.stringify(listItems));
-  localStorage.setItem('despensa_history', JSON.stringify(historyLog));
-  localStorage.setItem('despensa_settings', JSON.stringify(settings));
-  localStorage.setItem('despensa_recipe_favorites', JSON.stringify(recipeFavorites));
+// ===================== ESTADO =====================
+let state = {
+  products: [],
+  list: [],
+  history: [],
+  favorites: [],
+  settings: { notifications: true, threshold: 20 }
+};
+
+const STORAGE_KEY = "despensa_app_v2";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state = { ...state, ...parsed };
+    }
+  } catch (e) { console.error(e); }
+  if (!state.products.length) seedDemoData();
+  renderAll();
 }
 
-// ===================== NAVIGATION =====================
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function seedDemoData() {
+  state.products = [
+    { id: "p1", name: "Café en grano", qty: 3, max: 5, unit: "kg", cat: "almacen" },
+    { id: "p2", name: "Leche entera", qty: 2, max: 6, unit: "litros", cat: "lacteos" },
+    { id: "p3", name: "Huevos", qty: 8, max: 12, unit: "unid", cat: "lacteos" },
+    { id: "p4", name: "Harina 0000", qty: 1, max: 5, unit: "kg", cat: "almacen" },
+    { id: "p5", name: "Azúcar", qty: 4, max: 5, unit: "kg", cat: "almacen" },
+    { id: "p6", name: "Aceite de oliva", qty: 1, max: 3, unit: "litros", cat: "almacen" },
+    { id: "p7", name: "Papas", qty: 2, max: 5, unit: "kg", cat: "verduras" },
+    { id: "p8", name: "Cebolla", qty: 3, max: 5, unit: "kg", cat: "verduras" },
+    { id: "p9", name: "Tomate", qty: 1, max: 3, unit: "kg", cat: "verduras" },
+    { id: "p10", name: "Pollo", qty: 1, max: 4, unit: "kg", cat: "carnes" },
+    { id: "p11", name: "Carne picada", qty: 2, max: 3, unit: "kg", cat: "carnes" },
+    { id: "p12", name: "Detergente", qty: 1, max: 3, unit: "litros", cat: "limpieza" }
+  ];
+  state.list = [
+    { id: "l1", name: "Yogur natural", qty: 6, unit: "unid", prio: "normal", done: false },
+    { id: "l2", name: "Pan lactal", qty: 1, unit: "unid", prio: "urgente", done: false },
+    { id: "l3", name: "Jabón en polvo", qty: 2, unit: "kg", prio: "normal", done: true }
+  ];
+  state.history = [
+    { id: "h1", date: new Date(Date.now() - 86400000).toISOString(), title: "Stock actualizado", desc: "Café en grano: 3 kg" },
+    { id: "h2", date: new Date(Date.now() - 172800000).toISOString(), title: "Producto agregado", desc: "Harina 0000: 1 kg" },
+    { id: "h3", date: new Date(Date.now() - 259200000).toISOString(), title: "Lista de compras", desc: "Compraste 6 items" }
+  ];
+  saveState();
+}
+
+function renderAll() {
+  renderStock();
+  renderList();
+  renderHistory();
+  renderPopularRecipes();
+}
+
+// ===================== NAVEGACIÓN =====================
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const btn = document.querySelector('.nav-item[data-screen="' + name + '"]');
-  if (btn) btn.classList.add('active');
+  const target = document.getElementById('screen-' + name);
+  if (target) target.classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-screen="${name}"]`);
+  if (nav) nav.classList.add('active');
   if (name === 'stock') renderStock();
   if (name === 'list') renderList();
-  if (name === 'recipes') renderPopularRecipes();
   if (name === 'history') renderHistory();
-}
-
-// ===================== MODALS =====================
-function openModalAddProduct() {
-  document.getElementById('modal-add-product').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-function openModalAddList() {
-  document.getElementById('modal-add-list').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
-  document.body.style.overflow = '';
-}
-function closeModalOnOverlay(e) {
-  if (e.target === e.currentTarget) closeModal(e.currentTarget.id);
-}
-
-// ===================== TAGS =====================
-function selectTag(btn) {
-  btn.parentElement.querySelectorAll('.tag').forEach(t => t.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
-// ===================== TOAST =====================
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  if (name === 'recipes') { renderPopularRecipes(); document.getElementById('recipe-search-input').value = ''; hideSuggestions(); }
+  window.scrollTo(0, 0);
 }
 
 // ===================== STOCK =====================
-function getStockLevel(pct) {
-  if (pct > 50) return 'high';
-  if (pct > settings.threshold) return 'medium';
-  return 'low';
-}
-
 function renderStock() {
   const container = document.getElementById('stock-content');
-  if (products.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">&#129371;</div><div class="empty-text">Tu despensa esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddProduct()">Agregar primer producto</button></div>';
-    return;
-  }
-  const sorted = [...products].sort((a,b) => {
-    const pa = (a.qty / a.max) * 100;
-    const pb = (b.qty / b.max) * 100;
-    return pa - pb;
+  const cats = {};
+  state.products.forEach(p => {
+    if (!cats[p.cat]) cats[p.cat] = [];
+    cats[p.cat].push(p);
   });
+  const catOrder = ['almacen','lacteos','verduras','carnes','bebidas','limpieza','otros'];
+  const catNames = { almacen:'Almacén', lacteos:'Lácteos', verduras:'Verduras', carnes:'Carnes', bebidas:'Bebidas', limpieza:'Limpieza', otros:'Otros' };
   let html = '';
-  const levels = { low:[], medium:[], high:[] };
-  sorted.forEach(p => {
-    const pct = Math.min((p.qty / p.max) * 100, 100);
-    levels[getStockLevel(pct)].push(p);
-  });
-  const levelConfig = {
-    low: { label:'Stock bajo', dot:'low' },
-    medium: { label:'Stock medio', dot:'medium' },
-    high: { label:'Stock alto', dot:'high' }
-  };
-  ['low','medium','high'].forEach(level => {
-    if (levels[level].length === 0) return;
-    html += '<div class="cat-header"><div class="cat-dot ' + levelConfig[level].dot + '"></div><span class="cat-title">' + levelConfig[level].label + '</span></div>';
-    levels[level].forEach(p => {
-      const pct = Math.min((p.qty / p.max) * 100, 100);
-      html += '<div class="card animate-in">' +
-        '<div class="product-row">' +
-          '<div class="product-info">' +
-            '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
-            '<div class="product-meta">' + p.qty + ' ' + p.unit + ' - ' + catLabel(p.cat) + '</div>' +
-          '</div>' +
-          '<div class="product-actions">' +
-            '<button class="qty-btn" onclick="adjustStock(' + p.id + ', -1)">-</button>' +
-            '<span class="qty-display">' + p.qty + '</span>' +
-            '<button class="qty-btn" onclick="adjustStock(' + p.id + ', 1)">+</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="stock-bar-wrap">' +
-          '<div class="stock-bar-labels"><span>0</span><span>' + p.max + ' ' + p.unit + '</span></div>' +
-          '<div class="stock-bar"><div class="stock-fill ' + getStockLevel(pct) + '" style="width:' + pct + '%"></div></div>' +
-        '</div>' +
-      '</div>';
+  catOrder.forEach(cat => {
+    if (!cats[cat]) return;
+    const items = cats[cat].sort((a,b) => a.name.localeCompare(b.name));
+    const lowCount = items.filter(p => (p.qty/p.max)*100 <= state.settings.threshold).length;
+    const dotClass = lowCount > 0 ? 'low' : (items.some(p => (p.qty/p.max)*100 <= 50) ? 'medium' : 'high');
+    html += `<div class="cat-header"><div class="cat-dot ${dotClass}"></div><span class="cat-title">${catNames[cat]}</span></div>`;
+    items.forEach(p => {
+      const pct = Math.min(100, Math.round((p.qty / p.max) * 100));
+      const barClass = pct <= state.settings.threshold ? 'low' : (pct <= 50 ? 'medium' : 'high');
+      html += `
+        <div class="card animate-in">
+          <div class="product-row">
+            <div class="product-info">
+              <div class="product-name">${escapeHtml(p.name)}</div>
+              <div class="product-meta">${p.qty} ${p.unit} · máx ${p.max}</div>
+            </div>
+            <div class="product-actions">
+              <button class="qty-btn" onclick="changeQty('${p.id}', -1)">−</button>
+              <span class="qty-display">${p.qty}</span>
+              <button class="qty-btn" onclick="changeQty('${p.id}', 1)">+</button>
+            </div>
+          </div>
+          <div class="stock-bar-wrap">
+            <div class="stock-bar-labels"><span>${pct}%</span><span>${p.max} ${p.unit}</span></div>
+            <div class="stock-bar"><div class="stock-fill ${barClass}" style="width:${pct}%"></div></div>
+          </div>
+        </div>`;
     });
   });
+  if (!state.products.length) {
+    html = `<div class="empty"><div class="empty-icon">📦</div><div>No hay productos en stock</div><div style="font-size:13px;margin-top:8px;">Tocá el + para agregar uno</div></div>`;
+  }
   container.innerHTML = html;
 }
 
-function adjustStock(id, delta) {
-  const p = products.find(x => x.id === id);
+function changeQty(id, delta) {
+  const p = state.products.find(x => x.id === id);
   if (!p) return;
-  const oldQty = p.qty;
   p.qty = Math.max(0, p.qty + delta);
-  if (p.qty !== oldQty) {
-    const action = delta < 0 ? 'usaste' : 'agregaste';
-    addHistory(action + ' ' + Math.abs(delta) + ' ' + p.unit + ' de ' + p.name, delta < 0 ? 'use' : 'buy');
-    saveData();
-    renderStock();
-    showToast(delta < 0 ? 'Descontado: ' + p.name : 'Agregado: ' + p.name);
+  if (p.qty === 0) {
+    addHistory(`Stock agotado`, `${p.name}: 0 ${p.unit}`);
+    showToast(`${p.name} se agotó`);
   }
+  saveState();
+  renderStock();
 }
 
-function catLabel(cat) {
-  const map = { almacen:'Almacen', lacteos:'Lacteos', verduras:'Verduras', carnes:'Carnes', bebidas:'Bebidas', limpieza:'Limpieza', otros:'Otros' };
-  return map[cat] || cat;
-}
-
-function escapeHtml(t) {
-  const d = document.createElement('div');
-  d.textContent = t;
-  return d.innerHTML;
-}
-
-// ===================== SAVE PRODUCT =====================
-function saveProduct() {
-  const name = document.getElementById('prod-name').value.trim();
-  const qty = parseInt(document.getElementById('prod-qty').value) || 0;
-  const unit = document.getElementById('prod-unit').value.trim() || 'unid';
-  const max = parseInt(document.getElementById('prod-max').value) || qty || 10;
-  const cat = document.querySelector('#prod-cats .tag.selected')?.dataset.cat || 'almacen';
-  if (!name) { showToast('Ingresa un nombre'); return; }
-  if (qty <= 0) { showToast('Ingresa una cantidad valida'); return; }
-  products.push({ id: Date.now(), name, qty, unit, max, cat, created: Date.now() });
-  addHistory('Compraste ' + qty + ' ' + unit + ' de ' + name, 'buy');
-  saveData();
-  closeModal('modal-add-product');
+function openModalAddProduct() {
   document.getElementById('prod-name').value = '';
   document.getElementById('prod-qty').value = '';
   document.getElementById('prod-unit').value = '';
   document.getElementById('prod-max').value = '10';
-  renderStock();
-  showToast('"' + name + '" agregado al stock');
+  document.querySelectorAll('#prod-cats .tag').forEach(t => t.classList.remove('selected'));
+  document.querySelector('#prod-cats .tag[data-cat="almacen"]').classList.add('selected');
+  openModal('modal-add-product');
 }
 
-// ===================== LIST =====================
+function saveProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const qty = parseInt(document.getElementById('prod-qty').value) || 1;
+  const unit = document.getElementById('prod-unit').value.trim() || 'unid';
+  const max = parseInt(document.getElementById('prod-max').value) || 10;
+  const catEl = document.querySelector('#prod-cats .tag.selected');
+  const cat = catEl ? catEl.dataset.cat : 'otros';
+  if (!name) { showToast('Ingresá un nombre'); return; }
+  const id = 'p' + Date.now();
+  state.products.push({ id, name, qty, max, unit, cat });
+  addHistory('Producto agregado', `${name}: ${qty} ${unit}`);
+  saveState();
+  closeModal('modal-add-product');
+  renderStock();
+  showToast(`${name} agregado al stock`);
+}
+
+// ===================== LISTA DE COMPRAS =====================
 function renderList() {
   const container = document.getElementById('list-content');
-  if (listItems.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">&#128221;</div><div class="empty-text">Tu lista esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddList()">Agregar item</button></div>';
-    return;
-  }
-  const prioOrder = { urgente:0, normal:1, opcional:2 };
-  const sorted = [...listItems].sort((a,b) => {
-    if (a.checked !== b.checked) return a.checked ? 1 : -1;
-    return prioOrder[a.prio] - prioOrder[b.prio];
-  });
+  const pending = state.list.filter(i => !i.done);
+  const done = state.list.filter(i => i.done);
   let html = '';
-  sorted.forEach(item => {
-    const prioColor = item.prio === 'urgente' ? 'var(--danger)' : item.prio === 'opcional' ? 'var(--text-muted)' : 'var(--text-secondary)';
-    html += '<div class="card animate-in">' +
-      '<div class="check-item ' + (item.checked ? 'checked' : '') + '" onclick="toggleListItem(' + item.id + ')">' +
-        '<input type="checkbox" ' + (item.checked ? 'checked' : '') + ' onclick="event.stopPropagation()">' +
-        '<span>' + escapeHtml(item.name) + ' <span style="color:' + prioColor + ';font-size:12px;">(' + item.qty + ' ' + item.unit + ')</span></span>' +
-      '</div>' +
-      '<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">' +
-        '<button class="btn-secondary" style="width:auto; padding:6px 14px; font-size:12px;" onclick="moveToStock(' + item.id + ')">Al stock</button>' +
-        '<button class="btn-secondary" style="width:auto; padding:6px 14px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="deleteListItem(' + item.id + ')">Eliminar</button>' +
-      '</div>' +
-    '</div>';
-  });
+  if (pending.length) {
+    html += `<div class="cat-header"><div class="cat-dot high"></div><span class="cat-title">Pendientes</span></div>`;
+    pending.forEach(item => {
+      const prioColor = item.prio === 'urgente' ? 'color:var(--danger)' : (item.prio === 'opcional' ? 'color:var(--text-muted)' : '');
+      html += `
+        <div class="card animate-in">
+          <div class="check-item" onclick="toggleListItem('${item.id}')">
+            <input type="checkbox" ${item.done ? 'checked' : ''} onclick="event.stopPropagation();toggleListItem('${item.id}')">
+            <span>${escapeHtml(item.name)} <span style="font-size:12px;color:var(--text-muted)">· ${item.qty} ${item.unit}</span></span>
+          </div>
+          <div style="text-align:right;margin-top:6px;font-size:11px;text-transform:uppercase;font-weight:700;${prioColor}">${item.prio}</div>
+        </div>`;
+    });
+  }
+  if (done.length) {
+    html += `<div class="cat-header"><div class="cat-dot medium"></div><span class="cat-title">Comprados</span></div>`;
+    done.forEach(item => {
+      html += `
+        <div class="card animate-in" style="opacity:0.6">
+          <div class="check-item checked" onclick="toggleListItem('${item.id}')">
+            <input type="checkbox" checked onclick="event.stopPropagation();toggleListItem('${item.id}')">
+            <span>${escapeHtml(item.name)} <span style="font-size:12px">· ${item.qty} ${item.unit}</span></span>
+          </div>
+        </div>`;
+    });
+  }
+  if (!state.list.length) {
+    html = `<div class="empty"><div class="empty-icon">🛒</div><div>Tu lista está vacía</div><div style="font-size:13px;margin-top:8px;">Agregá lo que necesitás comprar</div></div>`;
+  }
   container.innerHTML = html;
 }
 
 function toggleListItem(id) {
-  const item = listItems.find(x => x.id === id);
-  if (item) { item.checked = !item.checked; saveData(); renderList(); }
+  const item = state.list.find(x => x.id === id);
+  if (!item) return;
+  item.done = !item.done;
+  if (item.done) addHistory('Compra realizada', `${item.name}: ${item.qty} ${item.unit}`);
+  saveState();
+  renderList();
+}
+
+function openModalAddList() {
+  document.getElementById('list-name').value = '';
+  document.getElementById('list-qty').value = '';
+  document.getElementById('list-unit').value = '';
+  document.querySelectorAll('#list-priority .tag').forEach(t => t.classList.remove('selected'));
+  document.querySelector('#list-priority .tag[data-prio="normal"]').classList.add('selected');
+  openModal('modal-add-list');
 }
 
 function saveListItem() {
   const name = document.getElementById('list-name').value.trim();
   const qty = parseInt(document.getElementById('list-qty').value) || 1;
   const unit = document.getElementById('list-unit').value.trim() || 'unid';
-  const prio = document.querySelector('#list-priority .tag.selected')?.dataset.prio || 'normal';
-  if (!name) { showToast('Ingresa un producto'); return; }
-  listItems.push({ id: Date.now(), name, qty, unit, prio, checked: false });
-  saveData();
+  const prioEl = document.querySelector('#list-priority .tag.selected');
+  const prio = prioEl ? prioEl.dataset.prio : 'normal';
+  if (!name) { showToast('Ingresá un producto'); return; }
+  const id = 'l' + Date.now();
+  state.list.push({ id, name, qty, unit, prio, done: false });
+  saveState();
   closeModal('modal-add-list');
-  document.getElementById('list-name').value = '';
-  document.getElementById('list-qty').value = '';
-  document.getElementById('list-unit').value = '';
   renderList();
-  showToast('"' + name + '" agregado a la lista');
+  showToast(`${name} agregado a la lista`);
 }
 
-function deleteListItem(id) {
-  listItems = listItems.filter(x => x.id !== id);
-  saveData();
-  renderList();
-  showToast('Item eliminado');
-}
-
-function moveToStock(id) {
-  const item = listItems.find(x => x.id === id);
-  if (!item) return;
-  const existing = products.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-  if (existing) {
-    existing.qty += item.qty;
-    addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
-  } else {
-    products.push({ id: Date.now(), name: item.name, qty: item.qty, unit: item.unit, max: Math.max(item.qty * 2, 10), cat: 'almacen', created: Date.now() });
-    addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
-  }
-  listItems = listItems.filter(x => x.id !== id);
-  saveData();
-  renderList();
-  showToast('"' + item.name + '" movido al stock');
-}
-
-// ===================== HISTORY =====================
-function addHistory(title, type) {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-  historyLog.unshift({ id: Date.now(), date: 'Hoy, ' + timeStr, title, desc: type === 'buy' ? 'Producto agregado al stock' : 'Stock actualizado', type });
-  if (historyLog.length > 50) historyLog = historyLog.slice(0, 50);
-  saveData();
-}
-
+// ===================== HISTORIAL =====================
 function renderHistory() {
   const container = document.getElementById('history-content');
-  if (historyLog.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">&#128203;</div><div class="empty-text">Sin actividad reciente</div></div>';
+  if (!state.history.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📜</div><div>Sin actividad reciente</div></div>`;
     return;
   }
+  const grouped = {};
+  state.history.slice().reverse().forEach(h => {
+    const d = new Date(h.date);
+    const key = d.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(h);
+  });
   let html = '';
-  historyLog.forEach(h => {
-    html += '<div class="card animate-in">' +
-      '<div class="history-date">' + escapeHtml(h.date) + '</div>' +
-      '<div class="history-title">' + escapeHtml(h.title) + '</div>' +
-      '<div class="history-desc">' + escapeHtml(h.desc) + '</div>' +
-    '</div>';
+  Object.entries(grouped).forEach(([date, items]) => {
+    html += `<div class="cat-header"><span class="cat-title">${date}</span></div>`;
+    items.forEach(h => {
+      html += `
+        <div class="card animate-in">
+          <div class="history-title">${escapeHtml(h.title)}</div>
+          <div class="history-desc">${escapeHtml(h.desc)}</div>
+        </div>`;
+    });
   });
   container.innerHTML = html;
 }
 
-// ===================== SETTINGS =====================
-function toggleSetting(card) {
-  const toggle = card.querySelector('.toggle');
-  if (!toggle) {
-    const label = card.querySelector('.setting-label').textContent;
-    if (label.includes('Umbral')) {
-      const newVal = prompt('Nuevo umbral de alerta (%):', settings.threshold);
-      if (newVal && !isNaN(newVal)) {
-        settings.threshold = Math.min(100, Math.max(1, parseInt(newVal)));
-        document.getElementById('threshold-display').textContent = settings.threshold + '%';
-        saveData();
-        showToast('Umbral actualizado: ' + settings.threshold + '%');
-      }
-    } else if (label.includes('Borrar')) {
-      if (confirm('Estas seguro? Se borraran TODOS los datos permanentemente.')) {
-        localStorage.clear();
-        products = []; listItems = []; historyLog = [];
-        settings = { notifications:true, threshold:20 };
-        recipeFavorites = [];
-        saveData();
-        renderStock(); renderList(); renderHistory();
-        showToast('Todos los datos borrados');
-      }
-    }
-    return;
-  }
-  toggle.classList.toggle('on');
-  const setting = toggle.dataset.setting;
-  settings[setting] = toggle.classList.contains('on');
-  saveData();
-  showToast(setting === 'notifications' ? (settings.notifications ? 'Notificaciones activadas' : 'Notificaciones desactivadas') : 'Ajuste guardado');
+function addHistory(title, desc) {
+  state.history.push({ id: 'h' + Date.now(), date: new Date().toISOString(), title, desc });
+  if (state.history.length > 100) state.history = state.history.slice(-100);
+  saveState();
 }
 
-// ===================== RECIPES =====================
+// ===================== RECETAS =====================
+let currentCategory = 'all';
+let currentSearch = '';
+
 function renderPopularRecipes() {
   const container = document.getElementById('popular-recipes');
+  let recipes = RECIPES;
+  if (currentCategory !== 'all') {
+    recipes = recipes.filter(r => r.categories.includes(currentCategory));
+  }
   let html = '';
-  localRecipes.forEach(r => {
-    html += renderRecipeCard(r);
+  recipes.forEach(r => {
+    const isFav = state.favorites.includes(r.id);
+    html += `
+      <div class="card recipe-card animate-in" onclick="showRecipeDetail('${r.id}')" style="cursor:pointer;position:relative;">
+        <img class="recipe-img" src="${r.image}" alt="${escapeHtml(r.title)}" loading="lazy">
+        <div class="recipe-info">
+          <div class="recipe-title">${escapeHtml(r.title)}</div>
+          <div class="recipe-meta">⏱ ${r.time} · 🍽 ${r.servings} porciones · ${r.difficulty}</div>
+          <div class="recipe-tags">
+            ${r.categories.map(c => `<span class="recipe-tag">${c}</span>`).join('')}
+          </div>
+        </div>
+        <button class="favorite-btn ${isFav?'active':''}" onclick="event.stopPropagation();toggleFavorite('${r.id}')" title="Favorito">
+          ${isFav ? '❤' : '🤍'}
+        </button>
+      </div>`;
   });
+  if (!recipes.length) {
+    html = `<div class="empty"><div class="empty-icon">🍳</div><div>No se encontraron recetas</div></div>`;
+  }
   container.innerHTML = html;
 }
 
-function renderRecipeCard(recipe) {
-  const isFav = recipeFavorites.includes(recipe.id);
-  const tags = recipe.tags ? recipe.tags.split(',').slice(0, 2) : [];
-  return '<div class="card animate-in" onclick="openRecipe(\'' + recipe.id + '\')">' +
-    '<div class="recipe-card">' +
-      '<img class="recipe-img" src="' + recipe.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
-      '<div class="recipe-info">' +
-        '<div class="recipe-title">' + escapeHtml(recipe.name) + '</div>' +
-        '<div class="recipe-meta">' + recipe.area + ' - ' + recipe.category + '</div>' +
-        '<div class="recipe-tags">' + tags.map(t => '<span class="recipe-tag">' + escapeHtml(t) + '</span>').join('') + '</div>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
+function filterByCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('#category-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderPopularRecipes();
 }
 
-async function searchRecipes() {
-  const query = document.getElementById('recipe-search-input').value.trim();
-  if (!query) { showToast('Escribe algo para buscar'); return; }
-  const btn = document.getElementById('recipe-search-btn');
-  btn.disabled = true;
-  btn.textContent = '...';
+function toggleFavorite(id) {
+  const idx = state.favorites.indexOf(id);
+  if (idx > -1) state.favorites.splice(idx, 1);
+  else state.favorites.push(id);
+  saveState();
+  renderPopularRecipes();
+  const rec = RECIPES.find(r => r.id === id);
+  showToast(idx > -1 ? `${rec.title} eliminado de favoritos` : `${rec.title} agregado a favoritos`);
+}
+
+// ===================== BÚSQUEDA Y SUGERENCIAS =====================
+function handleSearchInput(input) {
+  const val = input.value.trim().toLowerCase();
+  currentSearch = val;
+  const dropdown = document.getElementById('suggestions-dropdown');
+  if (!val) { dropdown.classList.remove('active'); return; }
+
+  const matches = SUGGESTIONS_DB.filter(s => s.text.toLowerCase().includes(val)).slice(0, 8);
+  if (!matches.length) { dropdown.classList.remove('active'); return; }
+
+  const icons = { receta: '🍽', ingrediente: '🥕', categoria: '📂' };
+  dropdown.innerHTML = matches.map(m => `
+    <div class="suggestion-item" onclick="selectSuggestion('${escapeHtml(m.text)}')">
+      <span class="sugg-icon">${icons[m.type]}</span>
+      <span class="sugg-text">${highlightMatch(escapeHtml(m.text), val)}</span>
+      <span class="sugg-meta">${m.meta}</span>
+    </div>
+  `).join('');
+  dropdown.classList.add('active');
+}
+
+function highlightMatch(text, query) {
+  const re = new RegExp(`(${query})`, 'gi');
+  return text.replace(re, '<b style="color:var(--accent)">$1</b>');
+}
+
+function selectSuggestion(text) {
+  document.getElementById('recipe-search-input').value = text;
+  hideSuggestions();
+  searchRecipes();
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestions-dropdown').classList.remove('active');
+}
+
+function searchRecipes() {
+  const query = document.getElementById('recipe-search-input').value.trim().toLowerCase();
+  if (!query) { showToast('Ingresá un término de búsqueda'); return; }
+
+  const results = RECIPES.filter(r => {
+    const inTitle = r.title.toLowerCase().includes(query);
+    const inCat = r.categories.some(c => c.toLowerCase().includes(query));
+    const inIng = r.ingredients.some(i => i.name.toLowerCase().includes(query));
+    return inTitle || inCat || inIng;
+  });
+
+  renderRecipeResults(results, query);
   showScreen('recipe-results');
+  addHistory('Búsqueda de receta', `Buscó: "${query}" (${results.length} resultado${results.length!==1?'s':''})`);
+}
+
+function renderRecipeResults(results, query) {
   const container = document.getElementById('recipe-results-content');
-  container.innerHTML = '<div class="loader"><div class="loader-spinner"></div></div>';
-  try {
-    const localMatches = localRecipes.filter(r =>
-      r.name.toLowerCase().includes(query.toLowerCase()) ||
-      r.category.toLowerCase().includes(query.toLowerCase()) ||
-      r.tags.toLowerCase().includes(query.toLowerCase())
-    );
-    let apiRecipes = [];
-    try {
-      const res = await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s=' + encodeURIComponent(query));
-      const data = await res.json();
-      if (data.meals) apiRecipes = data.meals.map(m => parseMealDBRecipe(m));
-    } catch (e) { console.log('API error:', e); }
-    lastSearchResults = [...localMatches];
-    apiRecipes.forEach(ar => {
-      if (!lastSearchResults.find(lr => lr.name.toLowerCase() === ar.name.toLowerCase())) lastSearchResults.push(ar);
+  let html = `<div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">${results.length} resultado${results.length!==1?'s':''} para "${escapeHtml(query)}"</div>`;
+
+  if (!results.length) {
+    html += `
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <div>No encontramos recetas para "${escapeHtml(query)}"</div>
+        <div style="font-size:13px;margin-top:8px;">Probá con otro ingrediente o categoría</div>
+        <div style="margin-top:16px;">
+          <div class="section-title">Sugerencias</div>
+          <div class="tags">
+            <button class="tag" onclick="document.getElementById('recipe-search-input').value='pollo';searchRecipes()">Pollo</button>
+            <button class="tag" onclick="document.getElementById('recipe-search-input').value='pasta';searchRecipes()">Pasta</button>
+            <button class="tag" onclick="document.getElementById('recipe-search-input').value='postre';searchRecipes()">Postre</button>
+            <button class="tag" onclick="document.getElementById('recipe-search-input').value='vegetariano';searchRecipes()">Vegetariano</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    results.forEach(r => {
+      const isFav = state.favorites.includes(r.id);
+      html += `
+        <div class="card recipe-card animate-in" onclick="showRecipeDetail('${r.id}')" style="cursor:pointer;position:relative;">
+          <img class="recipe-img" src="${r.image}" alt="${escapeHtml(r.title)}" loading="lazy">
+          <div class="recipe-info">
+            <div class="recipe-title">${escapeHtml(r.title)}</div>
+            <div class="recipe-meta">⏱ ${r.time} · 🍽 ${r.servings} porciones · ${r.difficulty}</div>
+            <div class="recipe-tags">
+              ${r.categories.map(c => `<span class="recipe-tag">${c}</span>`).join('')}
+            </div>
+          </div>
+          <button class="favorite-btn ${isFav?'active':''}" onclick="event.stopPropagation();toggleFavorite('${r.id}')">
+            ${isFav ? '❤' : '🤍'}
+          </button>
+        </div>`;
     });
-    if (lastSearchResults.length === 0) {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">&#128269;</div><div class="empty-text">No se encontraron recetas para "' + escapeHtml(query) + '"</div></div>';
-    } else {
-      let html = '<div class="section-title">' + lastSearchResults.length + ' resultado' + (lastSearchResults.length > 1 ? 's' : '') + '</div>';
-      lastSearchResults.forEach(r => { html += renderRecipeCard(r); });
-      container.innerHTML = html;
-    }
-  } catch (e) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">&#9888;</div><div class="empty-text">Error al buscar</div></div>';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Buscar';
   }
-}
-
-function parseMealDBRecipe(meal) {
-  const ingredients = [];
-  for (let i = 1; i <= 20; i++) {
-    const ing = meal['strIngredient' + i];
-    const meas = meal['strMeasure' + i];
-    if (ing && ing.trim()) ingredients.push({ name: ing.trim(), measure: (meas || '').trim() || 'al gusto' });
-  }
-  return {
-    id: 'api_' + meal.idMeal, name: meal.strMeal, category: meal.strCategory || 'Otra',
-    area: meal.strArea || 'Internacional', image: meal.strMealThumb || '', tags: meal.strTags || '',
-    ingredients: ingredients, instructions: meal.strInstructions || 'Sin instrucciones disponibles.'
-  };
-}
-
-function openRecipe(id) {
-  let recipe = localRecipes.find(r => r.id === id);
-  if (!recipe) recipe = lastSearchResults.find(r => r.id === id);
-  if (!recipe) { showToast('Receta no encontrada'); return; }
-  currentRecipe = recipe;
-  showScreen('recipe-detail');
-  renderRecipeDetail(recipe);
-}
-
-function renderRecipeDetail(recipe) {
-  const container = document.getElementById('recipe-detail-content');
-  const isFav = recipeFavorites.includes(recipe.id);
-  const steps = recipe.instructions.split(/\.|\n/).map(s => s.trim()).filter(s => s.length > 10);
-  let html = '<div style="position:relative;">' +
-    '<img class="recipe-hero" src="' + recipe.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
-    '<button class="favorite-btn ' + (isFav ? 'active' : '') + '" onclick="toggleRecipeFavorite(event, \'' + recipe.id + '\')">' + (isFav ? '&#10084;' : '&#9825;') + '</button>' +
-  '</div>' +
-  '<div class="recipe-detail-title">' + escapeHtml(recipe.name) + '</div>' +
-  '<div class="recipe-detail-meta">' +
-    '<span class="badge">&#127859; ' + recipe.category + '</span> ' +
-    '<span class="badge">&#127758; ' + recipe.area + '</span> ' +
-    '<span class="badge">&#129379; ' + recipe.ingredients.length + ' ingredientes</span>' +
-  '</div>';
-  html += '<div class="section-title">Ingredientes</div>' +
-    '<div class="card">' +
-    recipe.ingredients.map(ing =>
-      '<div class="ingredient-row">' +
-        '<span class="ingredient-name">' + escapeHtml(ing.name) + '</span>' +
-        '<span class="ingredient-qty">' + escapeHtml(ing.measure) + '</span>' +
-      '</div>'
-    ).join('') +
-    '</div>' +
-    '<button class="btn-primary" onclick="addRecipeToShoppingList()">&#128722; Agregar ingredientes a la Lista</button>';
-  html += '<div class="section-title">Preparacion</div>';
-  steps.forEach((step, idx) => {
-    html += '<div class="step-card animate-in">' +
-      '<div class="step-number">' + (idx + 1) + '</div>' +
-      '<div class="step-text">' + escapeHtml(step) + '</div>' +
-    '</div>';
-  });
   container.innerHTML = html;
 }
 
-function toggleRecipeFavorite(event, id) {
-  event.stopPropagation();
-  const idx = recipeFavorites.indexOf(id);
-  if (idx >= 0) { recipeFavorites.splice(idx, 1); showToast('Eliminado de favoritos'); }
-  else { recipeFavorites.push(id); showToast('Agregado a favoritos'); }
-  saveData();
-  if (currentRecipe && currentRecipe.id === id) renderRecipeDetail(currentRecipe);
+// ===================== DETALLE DE RECETA =====================
+function showRecipeDetail(id) {
+  const r = RECIPES.find(x => x.id === id);
+  if (!r) return;
+  const container = document.getElementById('recipe-detail-content');
+  const isFav = state.favorites.includes(id);
+
+  // Verificar qué ingredientes tenemos en stock
+  const stockNames = state.products.map(p => p.name.toLowerCase());
+
+  container.innerHTML = `
+    <div class="animate-in">
+      <div style="position:relative;">
+        <img class="recipe-hero" src="${r.image}" alt="${escapeHtml(r.title)}">
+        <button class="favorite-btn ${isFav?'active':''}" style="top:8px;right:8px;" onclick="toggleFavorite('${r.id}');showRecipeDetail('${r.id}')">
+          ${isFav ? '❤' : '🤍'}
+        </button>
+      </div>
+      <div class="recipe-detail-title">${escapeHtml(r.title)}</div>
+      <div class="recipe-detail-meta">
+        <span class="badge">⏱ ${r.time}</span>
+        <span class="badge">🍽 ${r.servings} porciones</span>
+        <span class="badge">📊 ${r.difficulty}</span>
+      </div>
+      <div class="recipe-tags" style="margin-bottom:16px;">
+        ${r.categories.map(c => `<span class="recipe-tag">${c}</span>`).join('')}
+      </div>
+
+      <div class="section-title">Ingredientes</div>
+      <div class="card" style="padding:0 16px;">
+        ${r.ingredients.map(ing => {
+          const hasInStock = stockNames.some(s => ing.name.toLowerCase().includes(s) || s.includes(ing.name.toLowerCase()));
+          const stockIcon = hasInStock ? '✅' : '⚪';
+          return `
+            <div class="ingredient-row">
+              <span class="ingredient-name">${stockIcon} ${escapeHtml(ing.name)}</span>
+              <span class="ingredient-qty">${ing.qty} ${ing.unit}</span>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div style="margin:14px 0;">
+        <button class="btn-secondary" onclick="addRecipeToList('${r.id}')">➕ Agregar ingredientes faltantes a la lista</button>
+      </div>
+
+      <div class="section-title">Preparación</div>
+      ${r.steps.map((step, i) => `
+        <div class="step-card">
+          <div class="step-number">${i+1}</div>
+          <div class="step-text">${escapeHtml(step)}</div>
+        </div>
+      `).join('')}
+
+      <div style="height:40px;"></div>
+    </div>
+  `;
+  showScreen('recipe-detail');
 }
 
-function addRecipeToShoppingList() {
-  if (!currentRecipe) return;
-  currentRecipe.ingredients.forEach(ing => {
-    const parsed = parseMeasure(ing.measure);
-    listItems.push({ id: Date.now() + Math.random(), name: ing.name, qty: parsed.qty, unit: parsed.unit, prio: 'normal', checked: false });
+function addRecipeToList(recipeId) {
+  const r = RECIPES.find(x => x.id === recipeId);
+  if (!r) return;
+  const stockNames = state.products.map(p => p.name.toLowerCase());
+  let added = 0;
+  r.ingredients.forEach(ing => {
+    const hasInStock = stockNames.some(s => ing.name.toLowerCase().includes(s) || s.includes(ing.name.toLowerCase()));
+    if (!hasInStock) {
+      const id = 'l' + Date.now() + Math.random().toString(36).substr(2,5);
+      state.list.push({ id, name: ing.name, qty: ing.qty, unit: ing.unit, prio: 'normal', done: false });
+      added++;
+    }
   });
-  saveData();
-  showToast(currentRecipe.ingredients.length + ' ingredientes agregados a la Lista');
-}
-
-function parseMeasure(measure) {
-  const match = measure.match(/^([\d\/.]+)\s*(.*)$/);
-  if (match) {
-    const qty = parseFloat(match[1]) || 1;
-    const unit = match[2].trim() || 'unid';
-    return { qty, unit };
+  saveState();
+  if (added > 0) {
+    showToast(`${added} ingrediente${added>1?'s':''} agregado${added>1?'s':''} a la lista de compras`);
+    addHistory('Lista desde receta', `De "${r.title}": ${added} items`);
+  } else {
+    showToast('¡Tenés todos los ingredientes en stock!');
   }
-  return { qty: 1, unit: measure || 'unid' };
 }
 
-// ===================== SERVICE WORKER =====================
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(reg => console.log('SW registered'))
-    .catch(err => console.log('SW registration failed:', err));
+// ===================== AJUSTES =====================
+function toggleSetting(card) {
+  const toggle = card.querySelector('.toggle');
+  const label = card.querySelector('.setting-label').textContent;
+  if (toggle) {
+    toggle.classList.toggle('on');
+    state.settings.notifications = toggle.classList.contains('on');
+    saveState();
+    showToast(toggle.classList.contains('on') ? 'Notificaciones activadas' : 'Notificaciones desactivadas');
+  } else if (label.includes('Umbral')) {
+    const current = state.settings.threshold;
+    const next = current === 20 ? 30 : (current === 30 ? 50 : 20);
+    state.settings.threshold = next;
+    document.getElementById('threshold-display').textContent = next + '%';
+    saveState();
+    showToast(`Umbral de alerta: ${next}%`);
+  } else if (label.includes('Borrar')) {
+    if (confirm('¿Estás seguro de borrar todos los datos? Esta acción no se puede deshacer.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      state = { products: [], list: [], history: [], favorites: [], settings: { notifications: true, threshold: 20 } };
+      seedDemoData();
+      renderAll();
+      showToast('Datos restaurados');
+    }
+  }
 }
 
-// Initial render
-renderStock();
+// ===================== UTILIDADES =====================
+function selectTag(btn) {
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.tag').forEach(t => t.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('active');
+  }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Cerrar sugerencias al hacer click fuera
+document.addEventListener('click', (e) => {
+  const searchBar = document.querySelector('.search-bar');
+  if (searchBar && !searchBar.contains(e.target)) {
+    hideSuggestions();
+  }
+});
+
+// Inicializar
+loadState();
 </script>
 </body>
 </html>
