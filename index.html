@@ -18,12 +18,12 @@
     --text: #f0f0f0;
     --text-secondary: #a0a0a0;
     --text-muted: #606060;
-    --accent: #4ade80;
-    --accent-soft: rgba(74,222,128,0.12);
+    --accent: #f59e0b;
+    --accent-soft: rgba(245,158,11,0.12);
+    --positive: #4ade80;
+    --positive-soft: rgba(74,222,128,0.12);
     --warning: #fbbf24;
-    --warning-soft: rgba(251,191,36,0.12);
     --danger: #f87171;
-    --danger-soft: rgba(248,113,113,0.12);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -90,27 +90,21 @@
 
   .stock-bar-wrap { margin-top:10px; }
   .stock-bar-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
-  .stock-bar {
-    height:6px; background:var(--bg); border-radius:3px; overflow:hidden;
-  }
+  .stock-bar { height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
   .stock-fill { height:100%; border-radius:3px; transition:width 0.4s ease; }
-  .stock-fill.high { background:var(--accent); }
+  .stock-fill.high { background:var(--positive); }
   .stock-fill.medium { background:var(--warning); }
   .stock-fill.low { background:var(--danger); }
 
-  .cat-header {
-    display:flex; align-items:center; gap:8px;
-    margin: 18px 0 10px; padding-left:4px;
-  }
+  .cat-header { display:flex; align-items:center; gap:8px; margin: 18px 0 10px; padding-left:4px; }
   .cat-dot { width:8px; height:8px; border-radius:50%; }
-  .cat-dot.high { background:var(--accent); }
+  .cat-dot.high { background:var(--positive); }
   .cat-dot.medium { background:var(--warning); }
   .cat-dot.low { background:var(--danger); }
   .cat-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); }
 
   .empty { text-align:center; padding:60px 20px; color:var(--text-muted); }
   .empty-icon { font-size:48px; margin-bottom:12px; opacity:0.5; }
-  .empty-text { font-size:15px; }
 
   .input-group { margin-bottom:14px; }
   .input-label { font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
@@ -118,10 +112,9 @@
     width:100%; padding:12px 14px;
     background:var(--bg); border:1px solid var(--border);
     border-radius:var(--radius-md); color:var(--text);
-    font-size:15px; outline:none;
-    transition:border-color 0.2s;
+    font-size:15px; outline:none; transition:border-color 0.2s;
   }
-  .input-field:focus { border-color:var(--text-secondary); }
+  .input-field:focus { border-color:var(--accent); }
   .input-field::placeholder { color:var(--text-muted); }
 
   .tags { display:flex; flex-wrap:wrap; gap:8px; }
@@ -131,14 +124,12 @@
     color:var(--text-secondary); font-size:13px; font-weight:500;
     cursor:pointer; transition:all 0.15s;
   }
-  .tag.selected {
-    background:var(--text); color:var(--bg); border-color:var(--text);
-  }
+  .tag.selected { background:var(--text); color:var(--bg); border-color:var(--text); }
   .tag:active { transform:scale(0.95); }
 
   .btn-primary {
     width:100%; padding:14px;
-    background:var(--text); color:var(--bg);
+    background:var(--accent); color:var(--bg);
     border:none; border-radius:var(--radius-md);
     font-size:15px; font-weight:700; cursor:pointer;
     transition:all 0.15s; margin-top:8px;
@@ -153,13 +144,8 @@
   }
   .btn-secondary:active { background:var(--surface-hover); }
 
-  .check-item {
-    display:flex; align-items:center; gap:12px; cursor:pointer;
-  }
-  .check-item input[type="checkbox"] {
-    width:22px; height:22px; accent-color:var(--text);
-    cursor:pointer; flex-shrink:0;
-  }
+  .check-item { display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .check-item input[type="checkbox"] { width:22px; height:22px; accent-color:var(--text); cursor:pointer; flex-shrink:0; }
   .check-item span { font-size:15px; transition:all 0.2s; }
   .check-item.checked span { text-decoration:line-through; color:var(--text-muted); }
 
@@ -174,9 +160,19 @@
     gap:3px; padding:6px 0; background:none; border:none;
     color:var(--text-muted); cursor:pointer; transition:color 0.2s;
   }
-  .nav-item.active { color:var(--text); }
+  .nav-item.active { color:var(--accent); }
   .nav-item svg { width:22px; height:22px; }
   .nav-item span { font-size:10px; font-weight:600; }
+
+  .toast {
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--surface); color:var(--text); padding:12px 20px;
+    border-radius:var(--radius-md); border:1px solid var(--border);
+    font-size:14px; font-weight:500; z-index:300;
+    opacity:0; pointer-events:none; transition:all 0.3s;
+    white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
   .modal-overlay {
     position:fixed; top:0; left:0; right:0; bottom:0;
@@ -196,20 +192,6 @@
   .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
   .modal-title { font-size:18px; font-weight:700; }
 
-  .toast {
-    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:var(--surface); color:var(--text); padding:12px 20px;
-    border-radius:var(--radius-md); border:1px solid var(--border);
-    font-size:14px; font-weight:500; z-index:300;
-    opacity:0; pointer-events:none; transition:all 0.3s;
-    white-space:nowrap;
-  }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
-  .history-date { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
-  .history-title { font-weight:600; font-size:15px; }
-  .history-desc { font-size:13px; color:var(--text-secondary); margin-top:3px; }
-
   .setting-row { display:flex; justify-content:space-between; align-items:center; }
   .setting-label { font-weight:500; font-size:15px; }
   .toggle {
@@ -217,13 +199,102 @@
     background:var(--bg); border:1px solid var(--border);
     position:relative; cursor:pointer; transition:all 0.2s;
   }
-  .toggle.on { background:var(--accent); border-color:var(--accent); }
+  .toggle.on { background:var(--positive); border-color:var(--positive); }
   .toggle::after {
     content:''; position:absolute; top:2px; left:2px;
     width:20px; height:20px; border-radius:50%;
     background:var(--text); transition:all 0.2s;
   }
   .toggle.on::after { left:24px; }
+
+  .history-date { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  .history-title { font-weight:600; font-size:15px; }
+  .history-desc { font-size:13px; color:var(--text-secondary); margin-top:3px; }
+
+  /* RECIPE STYLES */
+  .search-bar { display:flex; gap:10px; padding: 0 0 12px; }
+  .search-input {
+    flex:1; padding:12px 16px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); color:var(--text);
+    font-size:15px; outline:none;
+  }
+  .search-input:focus { border-color:var(--accent); }
+  .search-input::placeholder { color:var(--text-muted); }
+  .search-btn {
+    padding:12px 18px; background:var(--accent); color:var(--bg);
+    border:none; border-radius:var(--radius-md); font-weight:700;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .search-btn:active { opacity:0.8; transform:scale(0.95); }
+  .search-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  .recipe-card { display:flex; gap:14px; align-items:center; }
+  .recipe-img {
+    width:72px; height:72px; border-radius:var(--radius-sm);
+    object-fit:cover; background:var(--bg); flex-shrink:0;
+  }
+  .recipe-info { flex:1; min-width:0; }
+  .recipe-title { font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .recipe-meta { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+  .recipe-tags { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .recipe-tag {
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
+    padding:3px 8px; border-radius:4px; background:var(--accent-soft); color:var(--accent);
+  }
+
+  .section-title {
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+    color:var(--text-muted); margin: 18px 0 10px; padding-left:4px;
+  }
+
+  .ingredient-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 10px 0; border-bottom:1px solid var(--border);
+  }
+  .ingredient-row:last-child { border-bottom:none; }
+  .ingredient-name { font-weight:500; }
+  .ingredient-qty { font-size:13px; color:var(--text-secondary); }
+
+  .step-number {
+    width:28px; height:28px; border-radius:50%;
+    background:var(--accent); color:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:13px; flex-shrink:0;
+  }
+  .step-card { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+  .step-text { font-size:14px; line-height:1.6; padding-top:4px; }
+
+  .recipe-hero {
+    width:100%; height:200px; object-fit:cover;
+    border-radius:var(--radius-md); margin-bottom:16px;
+    background:var(--surface);
+  }
+  .recipe-detail-title { font-size:20px; font-weight:700; margin-bottom:8px; }
+  .recipe-detail-meta { font-size:13px; color:var(--text-secondary); margin-bottom:16px; }
+
+  .loader { display:flex; justify-content:center; padding:40px; }
+  .loader-spinner {
+    width:32px; height:32px; border:3px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .favorite-btn {
+    position:absolute; top:12px; right:12px;
+    width:36px; height:36px; border-radius:50%;
+    background:rgba(0,0,0,0.6); border:none;
+    color:var(--text); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:18px;
+  }
+  .favorite-btn.active { color:var(--danger); }
+
+  .badge {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:600; color:var(--text-secondary);
+    background:var(--bg); padding:4px 10px; border-radius:20px;
+  }
 
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
@@ -247,7 +318,7 @@
 
   <div class="screens" id="screens">
 
-    <!-- STOCK -->
+    <!-- STOCK SCREEN -->
     <div class="screen active" id="screen-stock">
       <div class="header">
         <h1>Mi Despensa</h1>
@@ -260,7 +331,7 @@
       <div id="stock-content"></div>
     </div>
 
-    <!-- LIST -->
+    <!-- LIST SCREEN -->
     <div class="screen" id="screen-list">
       <div class="header">
         <h1>Lista de Compras</h1>
@@ -273,13 +344,54 @@
       <div id="list-content"></div>
     </div>
 
-    <!-- HISTORY -->
+    <!-- RECIPES SCREEN -->
+    <div class="screen" id="screen-recipes">
+      <div class="header">
+        <h1>Recetas</h1>
+      </div>
+      <div class="search-bar" style="padding: 0 0 12px;">
+        <input class="search-input" id="recipe-search-input" placeholder="Buscar receta... (ej: pasta, pollo, tarta)" onkeydown="if(event.key==='Enter')searchRecipes()">
+        <button class="search-btn" id="recipe-search-btn" onclick="searchRecipes()">Buscar</button>
+      </div>
+      <div id="recipes-content">
+        <div class="section-title">Recetas Populares</div>
+        <div id="popular-recipes"></div>
+      </div>
+    </div>
+
+    <!-- RECIPE RESULTS -->
+    <div class="screen" id="screen-recipe-results">
+      <div class="header">
+        <h1>Resultados</h1>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="showScreen('recipes')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="recipe-results-content"></div>
+    </div>
+
+    <!-- RECIPE DETAIL -->
+    <div class="screen" id="screen-recipe-detail">
+      <div class="header">
+        <h1>Receta</h1>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="showScreen('recipe-results')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="recipe-detail-content"></div>
+    </div>
+
+    <!-- HISTORY SCREEN -->
     <div class="screen" id="screen-history">
       <div class="header"><h1>Historial</h1></div>
       <div id="history-content"></div>
     </div>
 
-    <!-- SETTINGS -->
+    <!-- SETTINGS SCREEN -->
     <div class="screen" id="screen-settings">
       <div class="header"><h1>Ajustes</h1></div>
       <div class="card" style="cursor:pointer;" onclick="toggleSetting(this)">
@@ -297,11 +409,11 @@
       <div class="card" style="cursor:pointer;" onclick="toggleSetting(this)">
         <div class="setting-row">
           <span class="setting-label">Borrar todos los datos</span>
-          <span style="color:var(--danger); font-size:13px; font-weight:600;">Peligroso</span>
+          <span style="color:var(--danger); font-size:13px; font-weight:600;">Restaurar</span>
         </div>
       </div>
       <div style="text-align:center; margin-top:40px; color:var(--text-muted); font-size:12px;">
-        Mi Despensa v1.0
+        Mi Despensa v2.0
       </div>
     </div>
 
@@ -316,6 +428,10 @@
     <button class="nav-item" onclick="showScreen('list')" data-screen="list">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span>Lista</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('recipes')" data-screen="recipes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span>Recetas</span>
     </button>
     <button class="nav-item" onclick="showScreen('history')" data-screen="history">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -408,6 +524,164 @@
 </div>
 
 <script>
+// ===================== LOCAL RECIPES =====================
+const localRecipes = [
+  {
+    id: 'local_1', name: 'Torta Pavlova', category: 'Postre', area: 'Nueva Zelanda',
+    image: 'https://www.themealdb.com/images/media/meals/ruwpww1439907482.jpg',
+    tags: 'Dulce,Frutas',
+    ingredients: [
+      { name: 'Claras de huevo', measure: '4 unidades' },
+      { name: 'Azucar', measure: '250g' },
+      { name: 'Maicena', measure: '1 cucharadita' },
+      { name: 'Vinagre blanco', measure: '1 cucharadita' },
+      { name: 'Crema de leche', measure: '300ml' },
+      { name: 'Frutillas', measure: '200g' },
+      { name: 'Kiwi', measure: '2 unidades' },
+      { name: 'Arandanos', measure: '100g' }
+    ],
+    instructions: 'Precalentar el horno a 150C. Batir las claras a punto de nieve. Agregar el azucar gradualmente batiendo hasta que se disuelva. Incorporar la maicena y el vinagre. Formar un disco sobre papel manteca. Hornear 1 hora. Dejar enfriar en el horno. Cubrir con crema batida y frutas.'
+  },
+  {
+    id: 'local_2', name: 'Chocotorta', category: 'Postre', area: 'Argentina',
+    image: 'https://www.themealdb.com/images/media/meals/ysxwuq1487320185.jpg',
+    tags: 'Sin horno,Dulce',
+    ingredients: [
+      { name: 'Galletitas de chocolate', measure: '500g' },
+      { name: 'Queso crema', measure: '400g' },
+      { name: 'Dulce de leche', measure: '400g' },
+      { name: 'Cafe', measure: '200ml' },
+      { name: 'Leche', measure: '100ml' }
+    ],
+    instructions: 'Mezclar el queso crema con el dulce de leche hasta obtener una crema homogenea. Preparar el cafe con leche. Mojar las galletitas brevemente en el cafe. Intercalar capas de galletitas y crema. Refrigerar por minimo 4 horas. Decorar con ralladura de chocolate.'
+  },
+  {
+    id: 'local_3', name: 'Tarta de Manzana', category: 'Postre', area: 'Estados Unidos',
+    image: 'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg',
+    tags: 'Horneado,Clasico',
+    ingredients: [
+      { name: 'Manzanas', measure: '6 unidades' },
+      { name: 'Azucar', measure: '150g' },
+      { name: 'Canela', measure: '1 cucharadita' },
+      { name: 'Masa quebrada', measure: '1 unidad' },
+      { name: 'Mantequilla', measure: '50g' },
+      { name: 'Huevo', measure: '1 unidad' }
+    ],
+    instructions: 'Pelar y cortar las manzanas en laminas. Mezclar con azucar y canela. Forrar un molde con la masa. Colocar las manzanas. Pintar con huevo batido. Agregar trozos de mantequilla. Hornear a 180C por 45 minutos.'
+  },
+  {
+    id: 'local_4', name: 'Pastel de Papa', category: 'Plato principal', area: 'Argentina',
+    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
+    tags: 'Carne,Horneado',
+    ingredients: [
+      { name: 'Papas', measure: '1kg' },
+      { name: 'Carne molida', measure: '500g' },
+      { name: 'Cebolla', measure: '1 unidad' },
+      { name: 'Huevo duro', measure: '3 unidades' },
+      { name: 'Aceitunas', measure: '50g' },
+      { name: 'Leche', measure: '100ml' },
+      { name: 'Mantequilla', measure: '50g' },
+      { name: 'Nuez moscada', measure: '1 pizca' }
+    ],
+    instructions: 'Hacer un pure con las papas, leche, mantequilla y nuez moscada. Saltear la cebolla y la carne. Enmantecar una fuente. Colocar una capa de pure, la carne, huevos picados y aceitunas. Cubrir con el resto del pure. Hornear a 180C por 30 minutos.'
+  },
+  {
+    id: 'local_5', name: 'Risotto de Hongos', category: 'Plato principal', area: 'Italia',
+    image: 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
+    tags: 'Vegetariano,Arroz',
+    ingredients: [
+      { name: 'Arroz arborio', measure: '300g' },
+      { name: 'Hongos', measure: '300g' },
+      { name: 'Caldo de verduras', measure: '1L' },
+      { name: 'Vino blanco', measure: '100ml' },
+      { name: 'Cebolla', measure: '1 unidad' },
+      { name: 'Queso parmesano', measure: '50g' },
+      { name: 'Mantequilla', measure: '40g' },
+      { name: 'Ajo', measure: '2 dientes' }
+    ],
+    instructions: 'Saltear cebolla y ajo en mantequilla. Agregar los hongos y cocinar 5 minutos. Incorporar el arroz y tostar 2 minutos. Agregar el vino y dejar evaporar. Agregar el caldo caliente cucharon por cucharon, revolviendo constantemente. Cuando el arroz este al dente, retirar del fuego. Agregar queso parmesano y mantequilla. Dejar reposar 2 minutos antes de servir.'
+  },
+  {
+    id: 'local_6', name: 'Guiso de Lentejas', category: 'Plato principal', area: 'Espana',
+    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
+    tags: 'Vegetariano,Invierno',
+    ingredients: [
+      { name: 'Lentejas', measure: '300g' },
+      { name: 'Zanahoria', measure: '2 unidades' },
+      { name: 'Papa', measure: '2 unidades' },
+      { name: 'Cebolla', measure: '1 unidad' },
+      { name: 'Ajo', measure: '3 dientes' },
+      { name: 'Pimenton', measure: '1 cucharadita' },
+      { name: 'Laurel', measure: '2 hojas' },
+      { name: 'Caldo de verduras', measure: '1.5L' }
+    ],
+    instructions: 'Saltear cebolla, ajo y zanahoria picada. Agregar el pimenton. Incorporar las lentejas, papas en cubos, laurel y caldo. Cocinar a fuego lento por 45 minutos hasta que las lentejas esten tiernas. Rectificar sal y pimienta. Servir caliente.'
+  },
+  {
+    id: 'local_7', name: 'Tacos de Pollo', category: 'Plato principal', area: 'Mexico',
+    image: 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
+    tags: 'Rapido,Picante',
+    ingredients: [
+      { name: 'Pechuga de pollo', measure: '400g' },
+      { name: 'Tortillas de maiz', measure: '8 unidades' },
+      { name: 'Cebolla morada', measure: '1 unidad' },
+      { name: 'Cilantro', measure: '1 manojo' },
+      { name: 'Limon', measure: '2 unidades' },
+      { name: 'Chile en polvo', measure: '1 cucharada' },
+      { name: 'Aguacate', measure: '1 unidad' },
+      { name: 'Crema agria', measure: '100g' }
+    ],
+    instructions: 'Cortar el pollo en tiras y sazonar con chile, sal y pimienta. Saltear hasta dorar. Calentar las tortillas. Armar los tacos con pollo, cebolla picada, cilantro, aguacate en cubos y un chorrito de limon. Servir con crema agria al lado.'
+  },
+  {
+    id: 'local_8', name: 'Sopa de Calabaza', category: 'Entrada', area: 'Francia',
+    image: 'https://www.themealdb.com/images/media/meals/ruwpww1439907482.jpg',
+    tags: 'Vegetariano,Cremoso',
+    ingredients: [
+      { name: 'Calabaza', measure: '1kg' },
+      { name: 'Cebolla', measure: '1 unidad' },
+      { name: 'Ajo', measure: '2 dientes' },
+      { name: 'Caldo de verduras', measure: '1L' },
+      { name: 'Crema de leche', measure: '100ml' },
+      { name: 'Nuez moscada', measure: '1 pizca' },
+      { name: 'Mantequilla', measure: '30g' }
+    ],
+    instructions: 'Saltear cebolla y ajo en mantequilla. Agregar la calabaza en cubos y cocinar 5 minutos. Cubrir con caldo y cocinar 25 minutos. Licuar hasta obtener una crema suave. Agregar la crema de leche y nuez moscada. Servir caliente con croutons.'
+  },
+  {
+    id: 'local_9', name: 'Panqueques de Banana', category: 'Desayuno', area: 'Estados Unidos',
+    image: 'https://www.themealdb.com/images/media/meals/wxywrq1468235067.jpg',
+    tags: 'Dulce,Rapido',
+    ingredients: [
+      { name: 'Bananas maduras', measure: '2 unidades' },
+      { name: 'Huevo', measure: '1 unidad' },
+      { name: 'Harina', measure: '100g' },
+      { name: 'Leche', measure: '100ml' },
+      { name: 'Polvo de hornear', measure: '1 cucharadita' },
+      { name: 'Miel', measure: 'al gusto' },
+      { name: 'Mantequilla', measure: 'para cocinar' }
+    ],
+    instructions: 'Machacar las bananas con un tenedor. Batir el huevo y mezclar con las bananas. Agregar harina, leche y polvo de hornear. Mezclar hasta obtener una masa homogenea. Cocinar porciones en una sarten con mantequilla. Dar vuelta cuando aparezcan burbujas. Servir con miel.'
+  },
+  {
+    id: 'local_10', name: 'Ensalada Cesar', category: 'Entrada', area: 'Mexico',
+    image: 'https://www.themealdb.com/images/media/meals/58oia61564916529.jpg',
+    tags: 'Clasico,Pollo',
+    ingredients: [
+      { name: 'Lechuga romana', measure: '1 unidad' },
+      { name: 'Pechuga de pollo', measure: '200g' },
+      { name: 'Croutons', measure: '50g' },
+      { name: 'Queso parmesano', measure: '30g' },
+      { name: 'Anchoas', measure: '4 filetes' },
+      { name: 'Huevo', measure: '1 unidad' },
+      { name: 'Aceite de oliva', measure: '100ml' },
+      { name: 'Jugo de limon', measure: '1 cucharada' },
+      { name: 'Ajo', measure: '1 diente' }
+    ],
+    instructions: 'Hacer la salsa: licuar anchoas, ajo, huevo, jugo de limon y aceite de oliva. Saltear el pollo cortado en tiras. Lavar y cortar la lechuga. Mezclar la lechuga con la salsa. Agregar el pollo, croutons y queso parmesano rallado.'
+  }
+];
+
 // ===================== DATA STORE =====================
 let products = JSON.parse(localStorage.getItem('despensa_products')) || [
   { id:1, name:'Arroz', qty:5, unit:'kg', max:6, cat:'almacen', created:Date.now() },
@@ -428,12 +702,16 @@ let historyLog = JSON.parse(localStorage.getItem('despensa_history')) || [
   { id:3, date:'25 Jul, 11:00 AM', title:'Compra en Verduleria', desc:'5 productos agregados al stock', type:'buy' },
 ];
 let settings = JSON.parse(localStorage.getItem('despensa_settings')) || { notifications:true, threshold:20 };
+let recipeFavorites = JSON.parse(localStorage.getItem('despensa_recipe_favorites')) || [];
+let lastSearchResults = [];
+let currentRecipe = null;
 
 function saveData() {
   localStorage.setItem('despensa_products', JSON.stringify(products));
   localStorage.setItem('despensa_list', JSON.stringify(listItems));
   localStorage.setItem('despensa_history', JSON.stringify(historyLog));
   localStorage.setItem('despensa_settings', JSON.stringify(settings));
+  localStorage.setItem('despensa_recipe_favorites', JSON.stringify(recipeFavorites));
 }
 
 // ===================== NAVIGATION =====================
@@ -445,6 +723,7 @@ function showScreen(name) {
   if (btn) btn.classList.add('active');
   if (name === 'stock') renderStock();
   if (name === 'list') renderList();
+  if (name === 'recipes') renderPopularRecipes();
   if (name === 'history') renderHistory();
 }
 
@@ -492,26 +771,22 @@ function renderStock() {
     container.innerHTML = '<div class="empty"><div class="empty-icon">&#129371;</div><div class="empty-text">Tu despensa esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddProduct()">Agregar primer producto</button></div>';
     return;
   }
-
   const sorted = [...products].sort((a,b) => {
     const pa = (a.qty / a.max) * 100;
     const pb = (b.qty / b.max) * 100;
     return pa - pb;
   });
-
   let html = '';
   const levels = { low:[], medium:[], high:[] };
   sorted.forEach(p => {
     const pct = Math.min((p.qty / p.max) * 100, 100);
     levels[getStockLevel(pct)].push(p);
   });
-
   const levelConfig = {
     low: { label:'Stock bajo', dot:'low' },
     medium: { label:'Stock medio', dot:'medium' },
     high: { label:'Stock alto', dot:'high' }
   };
-
   ['low','medium','high'].forEach(level => {
     if (levels[level].length === 0) return;
     html += '<div class="cat-header"><div class="cat-dot ' + levelConfig[level].dot + '"></div><span class="cat-title">' + levelConfig[level].label + '</span></div>';
@@ -536,7 +811,6 @@ function renderStock() {
       '</div>';
     });
   });
-
   container.innerHTML = html;
 }
 
@@ -572,16 +846,9 @@ function saveProduct() {
   const unit = document.getElementById('prod-unit').value.trim() || 'unid';
   const max = parseInt(document.getElementById('prod-max').value) || qty || 10;
   const cat = document.querySelector('#prod-cats .tag.selected')?.dataset.cat || 'almacen';
-
   if (!name) { showToast('Ingresa un nombre'); return; }
   if (qty <= 0) { showToast('Ingresa una cantidad valida'); return; }
-
-  products.push({
-    id: Date.now(),
-    name, qty, unit, max, cat,
-    created: Date.now()
-  });
-
+  products.push({ id: Date.now(), name, qty, unit, max, cat, created: Date.now() });
   addHistory('Compraste ' + qty + ' ' + unit + ' de ' + name, 'buy');
   saveData();
   closeModal('modal-add-product');
@@ -600,13 +867,11 @@ function renderList() {
     container.innerHTML = '<div class="empty"><div class="empty-icon">&#128221;</div><div class="empty-text">Tu lista esta vacia</div><button class="btn-primary" style="margin-top:20px;" onclick="openModalAddList()">Agregar item</button></div>';
     return;
   }
-
   const prioOrder = { urgente:0, normal:1, opcional:2 };
   const sorted = [...listItems].sort((a,b) => {
     if (a.checked !== b.checked) return a.checked ? 1 : -1;
     return prioOrder[a.prio] - prioOrder[b.prio];
   });
-
   let html = '';
   sorted.forEach(item => {
     const prioColor = item.prio === 'urgente' ? 'var(--danger)' : item.prio === 'opcional' ? 'var(--text-muted)' : 'var(--text-secondary)';
@@ -621,17 +886,12 @@ function renderList() {
       '</div>' +
     '</div>';
   });
-
   container.innerHTML = html;
 }
 
 function toggleListItem(id) {
   const item = listItems.find(x => x.id === id);
-  if (item) {
-    item.checked = !item.checked;
-    saveData();
-    renderList();
-  }
+  if (item) { item.checked = !item.checked; saveData(); renderList(); }
 }
 
 function saveListItem() {
@@ -639,9 +899,7 @@ function saveListItem() {
   const qty = parseInt(document.getElementById('list-qty').value) || 1;
   const unit = document.getElementById('list-unit').value.trim() || 'unid';
   const prio = document.querySelector('#list-priority .tag.selected')?.dataset.prio || 'normal';
-
   if (!name) { showToast('Ingresa un producto'); return; }
-
   listItems.push({ id: Date.now(), name, qty, unit, prio, checked: false });
   saveData();
   closeModal('modal-add-list');
@@ -662,24 +920,14 @@ function deleteListItem(id) {
 function moveToStock(id) {
   const item = listItems.find(x => x.id === id);
   if (!item) return;
-
   const existing = products.find(p => p.name.toLowerCase() === item.name.toLowerCase());
   if (existing) {
     existing.qty += item.qty;
     addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
   } else {
-    products.push({
-      id: Date.now(),
-      name: item.name,
-      qty: item.qty,
-      unit: item.unit,
-      max: Math.max(item.qty * 2, 10),
-      cat: 'almacen',
-      created: Date.now()
-    });
+    products.push({ id: Date.now(), name: item.name, qty: item.qty, unit: item.unit, max: Math.max(item.qty * 2, 10), cat: 'almacen', created: Date.now() });
     addHistory('Compraste ' + item.qty + ' ' + item.unit + ' de ' + item.name, 'buy');
   }
-
   listItems = listItems.filter(x => x.id !== id);
   saveData();
   renderList();
@@ -690,13 +938,7 @@ function moveToStock(id) {
 function addHistory(title, type) {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-  historyLog.unshift({
-    id: Date.now(),
-    date: 'Hoy, ' + timeStr,
-    title,
-    desc: type === 'buy' ? 'Producto agregado al stock' : 'Stock actualizado',
-    type
-  });
+  historyLog.unshift({ id: Date.now(), date: 'Hoy, ' + timeStr, title, desc: type === 'buy' ? 'Producto agregado al stock' : 'Stock actualizado', type });
   if (historyLog.length > 50) historyLog = historyLog.slice(0, 50);
   saveData();
 }
@@ -736,6 +978,7 @@ function toggleSetting(card) {
         localStorage.clear();
         products = []; listItems = []; historyLog = [];
         settings = { notifications:true, threshold:20 };
+        recipeFavorites = [];
         saveData();
         renderStock(); renderList(); renderHistory();
         showToast('Todos los datos borrados');
@@ -748,6 +991,157 @@ function toggleSetting(card) {
   settings[setting] = toggle.classList.contains('on');
   saveData();
   showToast(setting === 'notifications' ? (settings.notifications ? 'Notificaciones activadas' : 'Notificaciones desactivadas') : 'Ajuste guardado');
+}
+
+// ===================== RECIPES =====================
+function renderPopularRecipes() {
+  const container = document.getElementById('popular-recipes');
+  let html = '';
+  localRecipes.forEach(r => {
+    html += renderRecipeCard(r);
+  });
+  container.innerHTML = html;
+}
+
+function renderRecipeCard(recipe) {
+  const isFav = recipeFavorites.includes(recipe.id);
+  const tags = recipe.tags ? recipe.tags.split(',').slice(0, 2) : [];
+  return '<div class="card animate-in" onclick="openRecipe(\'' + recipe.id + '\')">' +
+    '<div class="recipe-card">' +
+      '<img class="recipe-img" src="' + recipe.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
+      '<div class="recipe-info">' +
+        '<div class="recipe-title">' + escapeHtml(recipe.name) + '</div>' +
+        '<div class="recipe-meta">' + recipe.area + ' - ' + recipe.category + '</div>' +
+        '<div class="recipe-tags">' + tags.map(t => '<span class="recipe-tag">' + escapeHtml(t) + '</span>').join('') + '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+async function searchRecipes() {
+  const query = document.getElementById('recipe-search-input').value.trim();
+  if (!query) { showToast('Escribe algo para buscar'); return; }
+  const btn = document.getElementById('recipe-search-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+  showScreen('recipe-results');
+  const container = document.getElementById('recipe-results-content');
+  container.innerHTML = '<div class="loader"><div class="loader-spinner"></div></div>';
+  try {
+    const localMatches = localRecipes.filter(r =>
+      r.name.toLowerCase().includes(query.toLowerCase()) ||
+      r.category.toLowerCase().includes(query.toLowerCase()) ||
+      r.tags.toLowerCase().includes(query.toLowerCase())
+    );
+    let apiRecipes = [];
+    try {
+      const res = await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s=' + encodeURIComponent(query));
+      const data = await res.json();
+      if (data.meals) apiRecipes = data.meals.map(m => parseMealDBRecipe(m));
+    } catch (e) { console.log('API error:', e); }
+    lastSearchResults = [...localMatches];
+    apiRecipes.forEach(ar => {
+      if (!lastSearchResults.find(lr => lr.name.toLowerCase() === ar.name.toLowerCase())) lastSearchResults.push(ar);
+    });
+    if (lastSearchResults.length === 0) {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">&#128269;</div><div class="empty-text">No se encontraron recetas para "' + escapeHtml(query) + '"</div></div>';
+    } else {
+      let html = '<div class="section-title">' + lastSearchResults.length + ' resultado' + (lastSearchResults.length > 1 ? 's' : '') + '</div>';
+      lastSearchResults.forEach(r => { html += renderRecipeCard(r); });
+      container.innerHTML = html;
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">&#9888;</div><div class="empty-text">Error al buscar</div></div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  }
+}
+
+function parseMealDBRecipe(meal) {
+  const ingredients = [];
+  for (let i = 1; i <= 20; i++) {
+    const ing = meal['strIngredient' + i];
+    const meas = meal['strMeasure' + i];
+    if (ing && ing.trim()) ingredients.push({ name: ing.trim(), measure: (meas || '').trim() || 'al gusto' });
+  }
+  return {
+    id: 'api_' + meal.idMeal, name: meal.strMeal, category: meal.strCategory || 'Otra',
+    area: meal.strArea || 'Internacional', image: meal.strMealThumb || '', tags: meal.strTags || '',
+    ingredients: ingredients, instructions: meal.strInstructions || 'Sin instrucciones disponibles.'
+  };
+}
+
+function openRecipe(id) {
+  let recipe = localRecipes.find(r => r.id === id);
+  if (!recipe) recipe = lastSearchResults.find(r => r.id === id);
+  if (!recipe) { showToast('Receta no encontrada'); return; }
+  currentRecipe = recipe;
+  showScreen('recipe-detail');
+  renderRecipeDetail(recipe);
+}
+
+function renderRecipeDetail(recipe) {
+  const container = document.getElementById('recipe-detail-content');
+  const isFav = recipeFavorites.includes(recipe.id);
+  const steps = recipe.instructions.split(/\.|\n/).map(s => s.trim()).filter(s => s.length > 10);
+  let html = '<div style="position:relative;">' +
+    '<img class="recipe-hero" src="' + recipe.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
+    '<button class="favorite-btn ' + (isFav ? 'active' : '') + '" onclick="toggleRecipeFavorite(event, \'' + recipe.id + '\')">' + (isFav ? '&#10084;' : '&#9825;') + '</button>' +
+  '</div>' +
+  '<div class="recipe-detail-title">' + escapeHtml(recipe.name) + '</div>' +
+  '<div class="recipe-detail-meta">' +
+    '<span class="badge">&#127859; ' + recipe.category + '</span> ' +
+    '<span class="badge">&#127758; ' + recipe.area + '</span> ' +
+    '<span class="badge">&#129379; ' + recipe.ingredients.length + ' ingredientes</span>' +
+  '</div>';
+  html += '<div class="section-title">Ingredientes</div>' +
+    '<div class="card">' +
+    recipe.ingredients.map(ing =>
+      '<div class="ingredient-row">' +
+        '<span class="ingredient-name">' + escapeHtml(ing.name) + '</span>' +
+        '<span class="ingredient-qty">' + escapeHtml(ing.measure) + '</span>' +
+      '</div>'
+    ).join('') +
+    '</div>' +
+    '<button class="btn-primary" onclick="addRecipeToShoppingList()">&#128722; Agregar ingredientes a la Lista</button>';
+  html += '<div class="section-title">Preparacion</div>';
+  steps.forEach((step, idx) => {
+    html += '<div class="step-card animate-in">' +
+      '<div class="step-number">' + (idx + 1) + '</div>' +
+      '<div class="step-text">' + escapeHtml(step) + '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleRecipeFavorite(event, id) {
+  event.stopPropagation();
+  const idx = recipeFavorites.indexOf(id);
+  if (idx >= 0) { recipeFavorites.splice(idx, 1); showToast('Eliminado de favoritos'); }
+  else { recipeFavorites.push(id); showToast('Agregado a favoritos'); }
+  saveData();
+  if (currentRecipe && currentRecipe.id === id) renderRecipeDetail(currentRecipe);
+}
+
+function addRecipeToShoppingList() {
+  if (!currentRecipe) return;
+  currentRecipe.ingredients.forEach(ing => {
+    const parsed = parseMeasure(ing.measure);
+    listItems.push({ id: Date.now() + Math.random(), name: ing.name, qty: parsed.qty, unit: parsed.unit, prio: 'normal', checked: false });
+  });
+  saveData();
+  showToast(currentRecipe.ingredients.length + ' ingredientes agregados a la Lista');
+}
+
+function parseMeasure(measure) {
+  const match = measure.match(/^([\d\/.]+)\s*(.*)$/);
+  if (match) {
+    const qty = parseFloat(match[1]) || 1;
+    const unit = match[2].trim() || 'unid';
+    return { qty, unit };
+  }
+  return { qty: 1, unit: measure || 'unid' };
 }
 
 // ===================== SERVICE WORKER =====================

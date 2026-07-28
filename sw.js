@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-despensa-v2';
+const CACHE_NAME = 'mi-despensa-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -33,7 +33,6 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request).catch(() => {
-        // Fallback para offline
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }

@@ -1,7 +1,7 @@
 {
   "name": "Mi Despensa",
   "short_name": "Despensa",
-  "description": "Control de stock y lista de compras para tu hogar",
+  "description": "Control de stock, lista de compras y recetas para tu hogar",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,15 +9,7 @@
   "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
